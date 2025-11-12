@@ -70,28 +70,6 @@
   margin-left: 4px;
 }
 
-.pulse-generate-btn {
-  padding: 6px 12px;
-  background: #172A3A;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pulse-generate-btn:hover:not(:disabled) {
-  background: #0f1f2d;
-  transform: translateY(-1px);
-}
-
-.pulse-generate-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .pulse-section-header {
   text-align: center;
   font-size: 12px;
