@@ -1,14 +1,16 @@
 // Portfolio Pulse Integration
-// Manages view toggling between Research Library and Portfolio Pulse
+// Manages view toggling for both left panel (Library/Pulse) and right panel (Research/White Label)
 
 class PulseIntegration {
   constructor() {
     this.currentView = 'library'; // 'library' or 'pulse'
+    this.currentRightView = 'research'; // 'research' or 'whitelabel'
     this.init();
   }
 
   init() {
     this.setupToggle();
+    this.setupRightToggle();
     this.initializePulseWidget();
   }
 
@@ -22,6 +24,49 @@ class PulseIntegration {
 
     if (pulseBtn) {
       pulseBtn.addEventListener('click', () => this.switchView('pulse'));
+    }
+  }
+
+  setupRightToggle() {
+    const researchBtn = document.getElementById('viewResearch');
+    const whiteLabelBtn = document.getElementById('viewWhiteLabel');
+
+    if (researchBtn) {
+      researchBtn.addEventListener('click', () => this.switchRightView('research'));
+    }
+
+    if (whiteLabelBtn) {
+      whiteLabelBtn.addEventListener('click', () => this.switchRightView('whitelabel'));
+    }
+  }
+
+  switchRightView(view) {
+    if (this.currentRightView === view) return;
+
+    this.currentRightView = view;
+
+    const researchForm = document.getElementById('researchForm');
+    const whiteLabelForm = document.getElementById('whiteLabelForm');
+    const researchBtn = document.getElementById('viewResearch');
+    const whiteLabelBtn = document.getElementById('viewWhiteLabel');
+
+    if (view === 'research') {
+      // Show research form, hide white label
+      if (researchForm) researchForm.style.display = 'block';
+      if (whiteLabelForm) whiteLabelForm.style.display = 'none';
+      
+      // Update button states
+      if (researchBtn) researchBtn.classList.add('active');
+      if (whiteLabelBtn) whiteLabelBtn.classList.remove('active');
+
+    } else if (view === 'whitelabel') {
+      // Show white label form, hide research
+      if (researchForm) researchForm.style.display = 'none';
+      if (whiteLabelForm) whiteLabelForm.style.display = 'block';
+      
+      // Update button states
+      if (researchBtn) researchBtn.classList.remove('active');
+      if (whiteLabelBtn) whiteLabelBtn.classList.add('active');
     }
   }
 
