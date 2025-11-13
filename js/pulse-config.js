@@ -9,7 +9,7 @@ const PULSE_CONFIG = {
   MODEL: 'publishers/anthropic/models/claude-sonnet-4',
   
   // Pulse-specific interaction name
-  INTERACTION_NAME: 'Pulse v10',
+  INTERACTION_NAME: 'Pulse',
   
   // Scheduling
   DAILY_GENERATION_TIME: '09:30', // 9:30 AM daily auto-generation
