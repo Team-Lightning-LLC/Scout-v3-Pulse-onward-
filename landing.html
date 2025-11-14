@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketLens - AI-Powered Financial Research Platform</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1a1a1a;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(23, 42, 58, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .logo-tagline {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .cta-btn {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, #172A3A 0%, #0f1923 100%);
+      padding: 180px 40px 120px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+      border-radius: 50%;
+    }
+
+    .hero-content {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: 64px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 24px;
+      line-height: 1.1;
+    }
+
+    .hero-gradient-text {
+      background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .cta-primary {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      padding: 16px 40px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .cta-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(37, 99, 235, 0.4);
+    }
+
+    .cta-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 16px 40px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .cta-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Stats Section */
+    .stats {
+      background: white;
+      padding: 60px 40px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .stats-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 60px;
+      text-align: center;
+    }
+
+    .stat-item h3 {
+      font-size: 48px;
+      font-weight: 800;
+      color: #2563eb;
+      margin-bottom: 8px;
+    }
+
+    .stat-item p {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* Problem Section */
+    .problem {
+      padding: 120px 40px;
+      background: #f9fafb;
+    }
+
+    .problem-content {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .section-label {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+
+    .problem h2 {
+      font-size: 42px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 24px;
+      line-height: 1.2;
+    }
+
+    .problem p {
+      font-size: 20px;
+      color: #6b7280;
+      line-height: 1.7;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 120px 40px;
+      background: white;
+    }
+
+    .features-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .features-header h2 {
+      font-size: 42px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 16px;
+    }
+
+    .features-header p {
+      font-size: 20px;
+      color: #6b7280;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+
+    .feature-card {
+      background: #f9fafb;
+      padding: 40px;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      border: 1px solid #e5e7eb;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      border-color: #2563eb;
+    }
+
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      font-size: 28px;
+    }
+
+    .feature-card h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    /* Platform Preview */
+    .preview {
+      padding: 120px 40px;
+      background: linear-gradient(180deg, #f9fafb 0%, white 100%);
+    }
+
+    .preview-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .preview h2 {
+      font-size: 42px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 16px;
+    }
+
+    .preview p {
+      font-size: 20px;
+      color: #6b7280;
+      margin-bottom: 60px;
+    }
+
+    .preview-image {
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.15);
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      /* Placeholder for screenshot */
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9ca3af;
+      font-size: 18px;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      padding: 120px 40px;
+      background: white;
+    }
+
+    .how-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .how-header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .how-header h2 {
+      font-size: 42px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 16px;
+    }
+
+    .how-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 60px;
+      position: relative;
+    }
+
+    .step {
+      text-align: center;
+    }
+
+    .step-number {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .step h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+    }
+
+    .step p {
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      padding: 120px 40px;
+      background: linear-gradient(135deg, #172A3A 0%, #0f1923 100%);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
+      bottom: -400px;
+      left: -200px;
+      border-radius: 50%;
+    }
+
+    .cta-content {
+      max-width: 700px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section h2 {
+      font-size: 48px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 24px;
+      line-height: 1.2;
+    }
+
+    .cta-section p {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 40px;
+    }
+
+    /* Footer */
+    .footer {
+      background: #0a0f14;
+      padding: 60px 40px 40px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 60px;
+      margin-bottom: 40px;
+    }
+
+    .footer-brand h3 {
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .footer-brand p {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .footer-column h4 {
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .footer-links {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 10px;
+    }
+
+    .footer-links a {
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: white;
+    }
+
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 968px) {
+      .hero h1 {
+        font-size: 48px;
+      }
+
+      .features-grid,
+      .how-steps,
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <nav class="nav">
+      <div class="logo">
+        <div>
+          <div class="logo-text">MarketLens</div>
+          <div class="logo-tagline">Powered by Vertesia</div>
+        </div>
+      </div>
+      <a href="#" class="cta-btn">Get Started</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Financial Research, <span class="hero-gradient-text">Reimagined</span></h1>
+      <p>Generate institutional-grade research in minutes, not days. AI-powered analysis with the depth and rigor your portfolio deserves.</p>
+      <div class="hero-cta">
+        <a href="#" class="cta-primary">Start Researching</a>
+        <a href="#" class="cta-secondary">Watch Demo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats">
+    <div class="stats-container">
+      <div class="stat-item">
+        <h3>5 min</h3>
+        <p>Average research generation time</p>
+      </div>
+      <div class="stat-item">
+        <h3>12+</h3>
+        <p>Research frameworks available</p>
+      </div>
+      <div class="stat-item">
+        <h3>100%</h3>
+        <p>Customizable to your strategy</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem -->
+  <section class="problem">
+    <div class="problem-content">
+      <span class="section-label">The Problem</span>
+      <h2>Traditional research is broken</h2>
+      <p>Hours spent aggregating data, days waiting for reports, and thousands spent on subscriptions. Independent investors and advisors deserve better tools to compete with institutional research desks.</p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="features-container">
+      <div class="features-header">
+        <span class="section-label">Capabilities</span>
+        <h2>Everything you need to research smarter</h2>
+        <p>Professional research tools, powered by AI</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Agentic Research</h3>
+          <p>Generate comprehensive reports using 12+ frameworks including DCF valuations, Porter's Five Forces, ecosystem mapping, and scenario modeling.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📈</div>
+          <h3>Portfolio Pulse</h3>
+          <p>Daily personalized digest articles about your holdings. Stay informed on what matters to your portfolio with automated intelligence.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3>Document Synthesis</h3>
+          <p>Combine multiple research documents into polished white-label reports. Perfect for client presentations and investment committees.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Interactive Chat</h3>
+          <p>Ask questions about any document in your library. Get instant answers with citations, or generate follow-up research on the fly.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📚</div>
+          <h3>Smart Collections</h3>
+          <p>Organize research by theme, sector, or strategy. Filter and search your entire knowledge base instantly.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3>Custom Frameworks</h3>
+          <p>Design your own analytical approaches. Full control over scope, depth, rigor, and perspective for every report.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platform Preview -->
+  <section class="preview">
+    <div class="preview-container">
+      <span class="section-label">Platform</span>
+      <h2>Research at institutional scale</h2>
+      <p>Professional tools designed for serious investors</p>
+      <div class="preview-image">
+        [Platform Screenshot: Full dashboard view showing research library, active generation, and document preview]
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works">
+    <div class="how-container">
+      <div class="how-header">
+        <span class="section-label">Process</span>
+        <h2>Research in three steps</h2>
+      </div>
+
+      <div class="how-steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Choose Framework</h3>
+          <p>Select from traditional analysis, ecosystem mapping, scenario modeling, or create your own custom approach.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Configure Research</h3>
+          <p>Set your parameters: asset vs sector scope, depth of analysis, financial rigor, and perspective.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Generate & Refine</h3>
+          <p>Receive comprehensive research in minutes. Chat with documents, generate follow-ups, and synthesize reports.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="cta-content">
+      <h2>Ready to transform your research process?</h2>
+      <p>Join independent investors and advisors who are already researching smarter with MarketLens.</p>
+      <a href="#" class="cta-primary">Get Started Today</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <h3>MarketLens</h3>
+        <p>AI-powered financial research platform for independent investors and advisors. Institutional-grade analysis, accessible to everyone.</p>
+      </div>
+
+      <div class="footer-column">
+        <h4>Product</h4>
+        <ul class="footer-links">
+          <li><a href="#">Features</a></li>
+          <li><a href="#">Pricing</a></li>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">Changelog</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Company</h4>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Legal</h4>
+        <ul class="footer-links">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Security</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2025 MarketLens. Powered by Vertesia. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
