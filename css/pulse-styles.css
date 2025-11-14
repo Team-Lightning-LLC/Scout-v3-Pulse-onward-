@@ -383,14 +383,11 @@
 /* Panel Headers */
 .panel-header {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: #172A3A;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  margin-right: 20px;
+  margin-right: 16px;
 }
-
 /* Disabled toggle buttons */
 .view-toggle-btn:disabled {
   opacity: 0.8;
