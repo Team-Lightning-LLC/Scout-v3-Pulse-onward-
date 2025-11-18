@@ -13,6 +13,7 @@ class DeepResearchApp {
 
   async init() {
     this.setupEventListeners();
+    this.setupCustomSelects();
     await this.loadDocuments();
     
     // Initialize collections system
@@ -26,23 +27,36 @@ class DeepResearchApp {
     console.log('Deep Research Agent initialized');
   }
 
+  setupCustomSelects() {
+    // Initialize custom selects
+    const capabilityEl = document.getElementById('capabilitySelect');
+    const frameworkEl = document.getElementById('frameworkSelect');
+    
+    if (capabilityEl) {
+      window.capabilitySelect = new CustomSelect(capabilityEl);
+      
+      // Listen for capability changes
+      capabilityEl.addEventListener('change', (e) => {
+        this.updateFrameworkOptions(e.detail.value);
+        this.updateCreateButton();
+      });
+    }
+    
+    if (frameworkEl) {
+      window.frameworkSelect = new CustomSelect(frameworkEl);
+      
+      // Listen for framework changes
+      frameworkEl.addEventListener('change', (e) => {
+        this.updateContextPlaceholder(e.detail.value);
+        this.applyFrameworkDefaults(e.detail.value);
+        this.updateCreateButton();
+      });
+    }
+  }
+
   setupEventListeners() {
-    // Capability/Framework cascade
-    const capabilitySelect = document.getElementById('capability');
-    const frameworkSelect = document.getElementById('framework');
     const contextInput = document.getElementById('contextInput');
     const createBtn = document.getElementById('createBtn');
-
-    capabilitySelect?.addEventListener('change', () => {
-      this.updateFrameworkOptions();
-      this.updateCreateButton();
-    });
-
-    frameworkSelect?.addEventListener('change', () => {
-      this.updateContextPlaceholder();
-      this.applyFrameworkDefaults();
-      this.updateCreateButton();
-    });
 
     contextInput?.addEventListener('input', (e) => {
       this.updateCharacterCount();
@@ -60,34 +74,36 @@ class DeepResearchApp {
       this.filterAndRenderDocuments();
     });
 
-    // Create mode dropdown
+    // Create mode dropdown (keeping for backwards compatibility, but may not be used with new toggles)
     const dropdownBtn = document.getElementById('createDropdownBtn');
     const dropdownMenu = document.getElementById('createDropdownMenu');
     
-    dropdownBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dropdownBtn.classList.toggle('open');
-      dropdownMenu.classList.toggle('open');
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.panel-title-dropdown')) {
-        dropdownBtn?.classList.remove('open');
-        dropdownMenu?.classList.remove('open');
-      }
-    });
-
-    // Dropdown menu items
-    const dropdownItems = document.querySelectorAll('.dropdown-item');
-    dropdownItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const mode = item.dataset.mode;
-        this.switchPanelMode(mode);
-        dropdownBtn?.classList.remove('open');
-        dropdownMenu?.classList.remove('open');
+    if (dropdownBtn && dropdownMenu) {
+      dropdownBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownBtn.classList.toggle('open');
+        dropdownMenu.classList.toggle('open');
       });
-    });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.panel-title-dropdown')) {
+          dropdownBtn.classList.remove('open');
+          dropdownMenu.classList.remove('open');
+        }
+      });
+
+      // Dropdown menu items
+      const dropdownItems = document.querySelectorAll('.dropdown-item');
+      dropdownItems.forEach(item => {
+        item.addEventListener('click', () => {
+          const mode = item.dataset.mode;
+          this.switchPanelMode(mode);
+          dropdownBtn.classList.remove('open');
+          dropdownMenu.classList.remove('open');
+        });
+      });
+    }
 
     // White label form interactions
     const whiteLabelJustification = document.getElementById('whiteLabelJustification');
@@ -130,34 +146,35 @@ class DeepResearchApp {
   }
 
   // Update framework dropdown based on selected capability
-  updateFrameworkOptions() {
-    const capabilitySelect = document.getElementById('capability');
-    const frameworkSelect = document.getElementById('framework');
-    
-    if (!capabilitySelect || !frameworkSelect) return;
-    
-    const selectedCapability = capabilitySelect.value;
-    frameworkSelect.innerHTML = '<option value="">Select framework...</option>';
+  updateFrameworkOptions(selectedCapability) {
+    if (!window.frameworkSelect) return;
     
     const frameworks = CONFIG.RESEARCH_CAPABILITIES[selectedCapability] || [];
-    frameworks.forEach(framework => {
-      const option = document.createElement('option');
-      option.value = framework;
-      option.textContent = framework;
-      frameworkSelect.appendChild(option);
-    });
     
-    frameworkSelect.disabled = frameworks.length === 0;
+    if (frameworks.length === 0) {
+      window.frameworkSelect.disable();
+      window.frameworkSelect.reset();
+      return;
+    }
+    
+    // Build framework options with tooltips
+    const frameworkOptions = frameworks.map(framework => ({
+      value: framework,
+      text: framework,
+      tooltip: CONFIG.FRAMEWORK_TOOLTIPS?.[framework] || ''
+    }));
+    
+    window.frameworkSelect.setOptions(frameworkOptions);
+    window.frameworkSelect.enable();
+    window.frameworkSelect.reset();
   }
 
   // Update context placeholder based on selected framework
-  updateContextPlaceholder() {
-    const frameworkSelect = document.getElementById('framework');
+  updateContextPlaceholder(selectedFramework) {
     const contextInput = document.getElementById('contextInput');
     
-    if (!frameworkSelect || !contextInput) return;
+    if (!contextInput) return;
     
-    const selectedFramework = frameworkSelect.value;
     const hint = CONFIG.CONTEXT_HINTS[selectedFramework];
     
     contextInput.placeholder = hint || "Describe your research needs in detail...";
@@ -171,11 +188,7 @@ class DeepResearchApp {
   }
 
   // Apply framework defaults to modifiers
-  applyFrameworkDefaults() {
-    const frameworkSelect = document.getElementById('framework');
-    if (!frameworkSelect) return;
-    
-    const selectedFramework = frameworkSelect.value;
+  applyFrameworkDefaults(selectedFramework) {
     const defaults = CONFIG.FRAMEWORK_DEFAULTS[selectedFramework];
     
     if (!defaults) return;
@@ -214,15 +227,13 @@ class DeepResearchApp {
 
   // Update create button state
   updateCreateButton() {
-    const capabilitySelect = document.getElementById('capability');
-    const frameworkSelect = document.getElementById('framework');
     const contextInput = document.getElementById('contextInput');
     const createBtn = document.getElementById('createBtn');
     
-    if (!capabilitySelect || !frameworkSelect || !contextInput || !createBtn) return;
+    if (!contextInput || !createBtn) return;
     
-    const hasCapability = capabilitySelect.value !== "";
-    const hasFramework = frameworkSelect.value !== "";
+    const hasCapability = window.capabilitySelect?.value !== "" && window.capabilitySelect?.value !== undefined;
+    const hasFramework = window.frameworkSelect?.value !== "" && window.frameworkSelect?.value !== undefined;
     const hasContext = contextInput.value.trim().length >= 1;
     
     createBtn.disabled = !(hasCapability && hasFramework && hasContext);
@@ -318,15 +329,16 @@ class DeepResearchApp {
 
   // Start research generation
   async startResearch() {
-    const capabilitySelect = document.getElementById('capability');
-    const frameworkSelect = document.getElementById('framework');
     const contextInput = document.getElementById('contextInput');
     
-    if (!capabilitySelect?.value || !frameworkSelect?.value || !contextInput?.value) return;
+    const capability = window.capabilitySelect?.value;
+    const framework = window.frameworkSelect?.value;
+    
+    if (!capability || !framework || !contextInput?.value) return;
     
     const researchData = {
-      capability: capabilitySelect.value,
-      framework: frameworkSelect.value,
+      capability: capability,
+      framework: framework,
       context: contextInput.value.trim(),
       modifiers: this.getResearchParameters()
     };
@@ -334,9 +346,9 @@ class DeepResearchApp {
     await researchEngine.startResearch(researchData);
     
     // Reset form after successful submit
-    capabilitySelect.value = '';
-    frameworkSelect.innerHTML = '<option value="">Choose capability first...</option>';
-    frameworkSelect.disabled = true;
+    window.capabilitySelect.reset();
+    window.frameworkSelect.reset();
+    window.frameworkSelect.disable();
     contextInput.value = '';
     document.getElementById('charCount').textContent = '0';
     document.getElementById('createBtn').disabled = true;
@@ -655,11 +667,11 @@ class DeepResearchApp {
     if (mode === 'research') {
       researchForm.style.display = 'block';
       whiteLabelForm.style.display = 'none';
-      dropdownLabel.textContent = 'Create Research';
+      if (dropdownLabel) dropdownLabel.textContent = 'Create Research';
     } else if (mode === 'whitelabel') {
       researchForm.style.display = 'none';
       whiteLabelForm.style.display = 'block';
-      dropdownLabel.textContent = 'Create White Label Document';
+      if (dropdownLabel) dropdownLabel.textContent = 'Create White Label Document';
       this.populateDocumentSelector();
     }
   }
@@ -849,6 +861,104 @@ The final output must be a single markdown document uploaded to the content obje
       console.error('Failed to start white label generation:', error);
       alert('Failed to start white label generation. Please try again.');
     }
+  }
+}
+
+// Custom Select Component
+class CustomSelect {
+  constructor(element) {
+    this.element = element;
+    this.trigger = element.querySelector('.custom-select-trigger');
+    this.optionsContainer = element.querySelector('.custom-select-options');
+    this.options = element.querySelectorAll('.custom-select-option');
+    this.value = '';
+    this.name = element.dataset.name;
+    
+    this.init();
+  }
+
+  init() {
+    // Toggle dropdown
+    this.trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.element.classList.contains('disabled')) return;
+      this.toggle();
+    });
+
+    // Option selection
+    this.optionsContainer.addEventListener('click', (e) => {
+      const option = e.target.closest('.custom-select-option');
+      if (option) {
+        this.select(option.dataset.value, option.textContent);
+      }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', () => this.close());
+  }
+
+  toggle() {
+    this.element.classList.toggle('open');
+    this.trigger.classList.toggle('open');
+  }
+
+  close() {
+    this.element.classList.remove('open');
+    this.trigger.classList.remove('open');
+  }
+
+  select(value, text) {
+    this.value = value;
+    this.trigger.querySelector('span').textContent = text;
+    
+    // Update selected state
+    this.options.forEach(opt => {
+      opt.classList.toggle('selected', opt.dataset.value === value);
+    });
+    
+    this.close();
+    
+    // Dispatch change event for app.js integration
+    this.element.dispatchEvent(new CustomEvent('change', { 
+      detail: { value, name: this.name }
+    }));
+  }
+
+  enable() {
+    this.element.classList.remove('disabled');
+    this.trigger.classList.remove('disabled');
+  }
+
+  disable() {
+    this.element.classList.add('disabled');
+    this.trigger.classList.add('disabled');
+    this.close();
+  }
+
+  setOptions(options) {
+    // Clear existing (keep placeholder)
+    const placeholder = this.optionsContainer.querySelector('.placeholder');
+    this.optionsContainer.innerHTML = '';
+    if (placeholder) this.optionsContainer.appendChild(placeholder);
+    
+    // Add new options
+    options.forEach(opt => {
+      const div = document.createElement('div');
+      div.className = 'custom-select-option';
+      div.dataset.value = opt.value;
+      if (opt.tooltip) div.dataset.tooltip = opt.tooltip;
+      div.textContent = opt.text;
+      this.optionsContainer.appendChild(div);
+    });
+    
+    this.options = this.optionsContainer.querySelectorAll('.custom-select-option');
+  }
+
+  reset() {
+    this.value = '';
+    const placeholder = this.optionsContainer.querySelector('.placeholder');
+    this.trigger.querySelector('span').textContent = placeholder ? placeholder.textContent : 'Select...';
+    this.options.forEach(opt => opt.classList.remove('selected'));
   }
 }
 
