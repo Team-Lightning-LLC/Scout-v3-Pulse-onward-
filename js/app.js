@@ -435,6 +435,7 @@ class DeepResearchApp {
   }
 
   // Filter and render documents
+// Filter and render documents
 filterAndRenderDocuments() {
   this.filteredDocuments = this.documents.filter(doc => {
     const matchesSearch = !this.searchQuery || 
@@ -446,7 +447,12 @@ filterAndRenderDocuments() {
     const matchesCollection = this.collectionsManager ? 
       this.collectionsManager.shouldShowDocument(doc.id) : true;
     
-    return matchesSearch && matchesCollection;
+    // Exclude Pulse documents (Digests and Watchlists)
+    const isDigest = doc.title && doc.title.toLowerCase().startsWith('digest:');
+    const isWatchlist = doc.title && doc.title.toLowerCase().startsWith('my watchlist:');
+    const isPulseDocument = isDigest || isWatchlist;
+    
+    return matchesSearch && matchesCollection && !isPulseDocument;
   });
   
   this.renderDocuments();
