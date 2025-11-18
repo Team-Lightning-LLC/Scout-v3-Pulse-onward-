@@ -129,28 +129,40 @@
       <!-- Research Form -->
       <div class="console" id="researchForm">
         
-        <!-- Research Capability -->
-        <div class="section">
-          <h3 data-tooltip="Choose the type of analysis framework for your research">Research Topic</h3>
-          <div class="field-group">
-            <select id="capability">
-              <option value="">Select Research Type...</option>
-              <option value="Traditional Analysis" data-tooltip="Standard financial analysis frameworks like DCF, SWOT, and Porter's Five Forces">Traditional Analysis</option>
-                <option value="Ecosystem Focused" data-tooltip="Map supplier, partner, and competitor networks to understand business dependencies">Ecosystem</option>
-                <option value="Narrative Centric" data-tooltip="Analyze market sentiment, competitive positioning, and management quality">Narrative Focused</option>
-                <option value="Comparative" data-tooltip="Compare multiple assets over time or across sectors to identify value migration">Comparative</option>
-                <option value="Scenario Modeling" data-tooltip="Model downside risks, correlations, and strategic market entry scenarios">Scenario Modeling</option>
-                <option value="Company Insights" data-tooltip="Map Management Teams, partnerships, and emerging industry trends">Intelligence Research</option>
-              </optgroup>
-              <option value="Custom Research" data-tooltip="Design your own research question and analytical approach">Custom Input</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <select id="framework" disabled>
-              <option value="">Choose Focus...</option>
-            </select>
-          </div>
-        </div>
+       <!-- Research Capability -->
+<div class="section">
+  <h3 data-tooltip="Choose the type of analysis framework for your research">Research Topic</h3>
+  <div class="field-group">
+    <div class="custom-select" id="capabilitySelect" data-name="capability">
+      <div class="custom-select-trigger">
+        <span>Select Research Type...</span>
+        <svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+      </div>
+      <div class="custom-select-options">
+        <div class="custom-select-option placeholder" data-value="">Select Research Type...</div>
+        <div class="custom-select-option" data-value="Traditional Analysis" data-tooltip="Standard financial analysis frameworks like DCF, SWOT, and Porter's Five Forces">Traditional Analysis</div>
+        <div class="custom-select-option" data-value="Ecosystem Focused" data-tooltip="Map supplier, partner, and competitor networks to understand business dependencies">Ecosystem</div>
+        <div class="custom-select-option" data-value="Narrative Centric" data-tooltip="Analyze market sentiment, competitive positioning, and management quality">Narrative Focused</div>
+        <div class="custom-select-option" data-value="Comparative" data-tooltip="Compare multiple assets over time or across sectors to identify value migration">Comparative</div>
+        <div class="custom-select-option" data-value="Scenario Modeling" data-tooltip="Model downside risks, correlations, and strategic market entry scenarios">Scenario Modeling</div>
+        <div class="custom-select-option" data-value="Company Insights" data-tooltip="Map talent landscapes, partnerships, and emerging industry trends">Intelligence Research</div>
+        <div class="custom-select-option" data-value="Custom Research" data-tooltip="Design your own research question and analytical approach">Custom Input</div>
+      </div>
+    </div>
+  </div>
+  <div class="field-group">
+    <div class="custom-select disabled" id="frameworkSelect" data-name="framework">
+      <div class="custom-select-trigger disabled">
+        <span>Choose Focus...</span>
+        <svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+      </div>
+      <div class="custom-select-options">
+        <div class="custom-select-option placeholder" data-value="">Choose Focus...</div>
+        <!-- Options populated by JS based on capability selection -->
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- Additional Context -->
         <div class="section">
