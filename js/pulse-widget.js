@@ -416,29 +416,64 @@ class PortfolioPulseWidget {
     }
   }
 
-  // Check if digest is from today, if not generate new one
-  async checkAndGenerateIfNeeded() {
-    if (!this.digest || !this.digest.created_at) {
-      console.log('[Pulse] No digest found, generating new one');
-      await this.generateDigest();
-      return;
-    }
-
-    const digestDate = new Date(this.digest.created_at);
-    const today = new Date();
-    
-    const isSameDay = digestDate.getDate() === today.getDate() &&
-                      digestDate.getMonth() === today.getMonth() &&
-                      digestDate.getFullYear() === today.getFullYear();
-    
-    if (!isSameDay) {
-      console.log('[Pulse] Digest is not from today, generating new one');
-      console.log(`[Pulse] Last digest: ${digestDate.toLocaleDateString()}, Today: ${today.toLocaleDateString()}`);
+// Check if digest is from today, if not generate new one
+async checkAndGenerateIfNeeded() {
+  // Check if a watchlist exists
+  const hasWatchlist = await this.hasWatchlistUploaded();
+  
+  if (!this.digest || !this.digest.created_at) {
+    if (hasWatchlist) {
+      console.log('[Pulse] No digest found but watchlist exists, generating');
       await this.generateDigest();
     } else {
-      console.log('[Pulse] Digest is current, no generation needed');
+      console.log('[Pulse] No digest and no watchlist, waiting for upload');
+      this.showEmpty('After uploading your Watchlist, daily digests will appear here.');
+      this.updateStatus('Ready', false);
     }
+    return;
   }
+
+  const digestDate = new Date(this.digest.created_at);
+  const today = new Date();
+  
+  const isSameDay = digestDate.getDate() === today.getDate() &&
+                    digestDate.getMonth() === today.getMonth() &&
+                    digestDate.getFullYear() === today.getFullYear();
+  
+  if (!isSameDay) {
+    console.log('[Pulse] Digest is not from today, generating new one');
+    console.log(`[Pulse] Last digest: ${digestDate.toLocaleDateString()}, Today: ${today.toLocaleDateString()}`);
+    await this.generateDigest();
+  } else {
+    console.log('[Pulse] Digest is current, no generation needed');
+  }
+}
+
+// Add this helper method
+async hasWatchlistUploaded() {
+  try {
+    const response = await fetch(`${PULSE_CONFIG.VERTESIA_BASE_URL}/objects?limit=100`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${PULSE_CONFIG.VERTESIA_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) return false;
+
+    const objects = await response.json();
+    const objectsArray = Array.isArray(objects) ? objects : objects.objects || [];
+    
+    return objectsArray.some(obj => 
+      (obj.name && obj.name.startsWith('My Watchlist:')) || 
+      (obj.properties && obj.properties.type === 'watchlist')
+    );
+  } catch (error) {
+    console.error('[Pulse] Failed to check for watchlist:', error);
+    return false;
+  }
+}
 
   // Scheduler for daily auto-generation
   scheduleDigestAt(timeStr) {
