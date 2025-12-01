@@ -441,11 +441,12 @@ class MarkdownViewer {
       (data) => {
         console.log('Stream message received:', data);
         
-        if (data.type === 'complete' && data.message) {
-          this.removeThinkingMessage();
-          this.addMessage('assistant', data.message);
-          this.reEnableInput();
-        }
+if (data.type === 'answer' && data.message && !this.hasReceivedAnswer) {
+  this.hasReceivedAnswer = true;  // Flag to ignore subsequent answers
+  this.removeThinkingMessage();
+  this.addMessage('assistant', data.message);
+  this.reEnableInput();
+}
       },
       
       () => {
