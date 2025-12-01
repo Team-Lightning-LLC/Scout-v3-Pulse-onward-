@@ -682,17 +682,28 @@ filterAndRenderDocuments() {
     }
   }
 
-  // Populate document selector for white label
+// Populate document selector for white label
 populateDocumentSelector() {
   const selector = document.getElementById('documentSelector');
   if (!selector) return;
   
   // Filter out Pulse documents (Digests and Watchlists)
-  const availableDocs = this.documents.filter(doc => {
+  let availableDocs = this.documents.filter(doc => {
     const isDigest = doc.title && doc.title.toLowerCase().startsWith('digest:');
     const isWatchlist = doc.title && doc.title.toLowerCase().startsWith('my watchlist:');
     return !isDigest && !isWatchlist;
   });
+  
+  // Apply current search filter if one exists
+  const searchInput = document.getElementById('documentSearch');
+  if (searchInput && searchInput.value) {
+    const searchLower = searchInput.value.toLowerCase();
+    availableDocs = availableDocs.filter(doc => {
+      const title = doc.title?.toLowerCase() || '';
+      const meta = `${doc.when} ${doc.area} ${doc.topic}`.toLowerCase();
+      return title.includes(searchLower) || meta.includes(searchLower);
+    });
+  }
   
   if (availableDocs.length === 0) {
     selector.innerHTML = '<div class="empty">No documents available. Create some research first.</div>';
@@ -700,15 +711,15 @@ populateDocumentSelector() {
   }
   
   const html = availableDocs.map(doc => `
-      <div class="selectable-doc ${this.selectedDocuments.includes(doc.id) ? 'selected' : ''}" 
-           data-doc-id="${doc.id}">
-        <div class="selectable-doc-title">${doc.title}</div>
-        <div class="selectable-doc-meta">${doc.when} • ${doc.area} • ${doc.topic}</div>
-      </div>
-    `).join('');
-    
-    selector.innerHTML = html;
-  }
+    <div class="selectable-doc ${this.selectedDocuments.includes(doc.id) ? 'selected' : ''}" 
+         data-doc-id="${doc.id}">
+      <div class="selectable-doc-title">${doc.title}</div>
+      <div class="selectable-doc-meta">${doc.when} • ${doc.area} • ${doc.topic}</div>
+    </div>
+  `).join('');
+  
+  selector.innerHTML = html;
+}
 
   // Toggle document selection
   toggleDocumentSelection(docId) {
