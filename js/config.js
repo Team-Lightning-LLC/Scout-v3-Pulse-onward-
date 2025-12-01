@@ -148,7 +148,7 @@ const CONFIG = {
     "Exposures and Business Models": "Revenue breakdown, concentration risks, cyclicality, pricing power, business resilience",
     
     // Scenario Modeling
-    "Risk Correlation Study": "Map how provided risk factors impact specific assets",
+    "Risk Modeling": "Map how provided risk factors impact specific assets",
     "Industry Consolidation: M&A": "Analyze consolidation trends, M&A targets, deal economics, and regulatory environment",
     "Monetary Policy & Interest Rate": "Analyze sensitivity to rate changes: duration exposure, refinancing risk, valuation impact",
     
