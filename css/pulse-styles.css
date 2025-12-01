@@ -523,6 +523,43 @@
   cursor: not-allowed;
 }
 
+/* History Navigation */
+.pulse-title-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pulse-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulse-nav-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.pulse-nav-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #172A3A;
+}
+
+.pulse-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* Loading Overlay */
 .pulse-loading-overlay {
   position: absolute;
