@@ -178,9 +178,8 @@ The user wants to explore the following aspects from that document:
 ${data.context}
 
 Use insights and context from the parent document to inform and enhance the quality of the research topic we are diving into. 
-Reference relevant findings from the parent document where appropriate, but create a standalone document 
-that can be read independently. This document is meant to be an extension of the parent that focuses more deeply on a specified topic.
-The singular document you generate MUST contain interactable hyperlinked sources. 
+Reference relevant findings from the parent document where appropriate, but create a standalone document that can be read independently.
+The singular document you generate MUST contain interactable hyperlinked sources. always include your sources. 
 If there are no sources in the singular document, the document is useless. Include interactable, complete sources for the document you create.
 Hyperlink the sources. You Must use hyperlinks for the sources of this singular document. Remember to only generate 1 document, not 2,3,4 or 5; just a singular complete document.
 
@@ -211,7 +210,7 @@ The Research Parameters you must follow for this document are:
 - Analytical Rigor: ${data.modifiers["Analytical Rigor"]}
 - Perspective: ${data.modifiers.perspective}
 
-All web searches must acknowledge that the current date is 10.21.2025 when searching for the most recent data. Search for the most recent data unless otherwise specified. Always capture the most recent reliable data. The final output must be a document uploaded to the content object library. Please produce a singular document for this research.
+Always capture the most recent and reliable data. The final output must be a document uploaded to the content object library. Please produce a singular document for this research.
     `;
     
     return prompt.trim();
