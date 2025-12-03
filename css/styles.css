@@ -727,15 +727,17 @@ dialog::backdrop {
 }
 
 .generate-row {
-  margin-top: 12px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0; /* Optional visual separator */
 }
 
-.generate-row .btn {
-  min-width: 120px;
+.generate-row .btn.primary {
+  min-width: 200px; /* Adjust as needed */
 }
-/* Add to existing styles.css */
+
 
 /* Field grouping for capability/framework */
 .field-group {
