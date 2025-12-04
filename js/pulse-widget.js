@@ -1,4 +1,4 @@
-// Portfolio Pulse Widget - Integrated Version 3
+// Portfolio Pulse Widget - Integrated Version 3 with Gates
 // Manages digest generation, loading, parsing, display, and history navigation
 
 class PortfolioPulseWidget {
@@ -74,6 +74,104 @@ class PortfolioPulseWidget {
     this.checkExistingWatchlist();
   }
 
+  // ===== GENERATION GATE METHODS =====
+  
+  // Check if we've sent a generation request in the last 12 hours
+  canGenerate() {
+    const lastGen = localStorage.getItem('pulse_last_generation');
+    if (!lastGen) return true;
+    
+    const lastGenTime = new Date(lastGen);
+    const now = new Date();
+    const timeSinceLastGen = now - lastGenTime;
+    const twelveHours = 12 * 60 * 60 * 1000;
+    
+    return timeSinceLastGen >= twelveHours;
+  }
+
+  // Get time remaining until next generation is allowed
+  getTimeUntilNextGeneration() {
+    const lastGen = localStorage.getItem('pulse_last_generation');
+    if (!lastGen) return 0;
+    
+    const lastGenTime = new Date(lastGen);
+    const now = new Date();
+    const timeSinceLastGen = now - lastGenTime;
+    const twelveHours = 12 * 60 * 60 * 1000;
+    const timeRemaining = twelveHours - timeSinceLastGen;
+    
+    return Math.max(0, timeRemaining);
+  }
+
+  // Format time remaining as human-readable string
+  formatTimeRemaining(ms) {
+    const hours = Math.floor(ms / (60 * 60 * 1000));
+    const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  }
+
+  // ===== WATCHLIST UPLOAD GATE METHODS =====
+  
+  // Check if user can upload a watchlist (max 2 per day)
+  canUploadWatchlist() {
+    const uploadsData = localStorage.getItem('pulse_watchlist_uploads');
+    if (!uploadsData) return true;
+    
+    const uploads = JSON.parse(uploadsData);
+    const today = new Date().toDateString();
+    
+    // Filter uploads from today only
+    const todaysUploads = uploads.filter(timestamp => {
+      const uploadDate = new Date(timestamp).toDateString();
+      return uploadDate === today;
+    });
+    
+    return todaysUploads.length < 2;
+  }
+
+  // Record a watchlist upload
+  recordWatchlistUpload() {
+    const uploadsData = localStorage.getItem('pulse_watchlist_uploads');
+    const uploads = uploadsData ? JSON.parse(uploadsData) : [];
+    
+    // Add current timestamp
+    uploads.push(new Date().toISOString());
+    
+    // Clean up uploads older than 2 days (keep storage lean)
+    const twoDaysAgo = Date.now() - (2 * 24 * 60 * 60 * 1000);
+    const recentUploads = uploads.filter(timestamp => {
+      return new Date(timestamp).getTime() > twoDaysAgo;
+    });
+    
+    localStorage.setItem('pulse_watchlist_uploads', JSON.stringify(recentUploads));
+  }
+
+  // Get remaining watchlist uploads for today
+  getRemainingUploads() {
+    const uploadsData = localStorage.getItem('pulse_watchlist_uploads');
+    if (!uploadsData) return 2;
+    
+    const uploads = JSON.parse(uploadsData);
+    const today = new Date().toDateString();
+    
+    const todaysUploads = uploads.filter(timestamp => {
+      const uploadDate = new Date(timestamp).toDateString();
+      return uploadDate === today;
+    });
+    
+    return Math.max(0, 2 - todaysUploads.length);
+  }
+
+  // Reset the generation gate (called on watchlist upload)
+  resetGenerationGate() {
+    localStorage.removeItem('pulse_last_generation');
+    console.log('[Pulse] Generation gate reset - upload allows immediate generation');
+  }
+
   // Show/hide loading overlay
   showLoadingOverlay(show) {
     const overlay = document.getElementById('pulseLoadingOverlay');
@@ -142,6 +240,13 @@ class PortfolioPulseWidget {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Check watchlist upload gate
+    if (!this.canUploadWatchlist()) {
+      console.log('[Pulse] Watchlist upload blocked - daily limit reached');
+      event.target.value = ''; // Reset file input
+      return;
+    }
+
     const controls = document.querySelector('.watchlist-controls');
     const uploadBtn = document.getElementById('pulseUploadBtn');
     
@@ -163,16 +268,21 @@ class PortfolioPulseWidget {
 
       const uploadedDoc = await this.uploadWatchlistFile(file, watchlistName);
 
-      // Step 4: Show success state
+      // Step 4: Record upload and reset generation gate
+      this.recordWatchlistUpload();
+      this.resetGenerationGate();
+      console.log(`[Pulse] Watchlist uploaded successfully. ${this.getRemainingUploads()} uploads remaining today.`);
+
+      // Step 5: Show success state
       this.showWatchlistDisplay(uploadedDoc);
 
-      // Step 5: Wait for vectorization then generate digest
+      // Step 6: Wait for vectorization then generate digest
       this.updateStatus('Processing...', true);
       console.log('[Pulse] Waiting 30 seconds for vectorization...');
       
       await new Promise(resolve => setTimeout(resolve, 30000));
 
-      // Step 6: Auto-generate digest
+      // Step 7: Auto-generate digest
       await this.generateDigest();
 
     } catch (error) {
@@ -416,64 +526,64 @@ class PortfolioPulseWidget {
     }
   }
 
-// Check if digest is from today, if not generate new one
-async checkAndGenerateIfNeeded() {
-  // Check if a watchlist exists
-  const hasWatchlist = await this.hasWatchlistUploaded();
-  
-  if (!this.digest || !this.digest.created_at) {
-    if (hasWatchlist) {
-      console.log('[Pulse] No digest found but watchlist exists, generating');
+  // Check if digest is from today, if not generate new one
+  async checkAndGenerateIfNeeded() {
+    // Check if a watchlist exists
+    const hasWatchlist = await this.hasWatchlistUploaded();
+    
+    if (!this.digest || !this.digest.created_at) {
+      if (hasWatchlist) {
+        console.log('[Pulse] No digest found but watchlist exists, attempting generation');
+        await this.generateDigest();
+      } else {
+        console.log('[Pulse] No digest and no watchlist, waiting for upload');
+        this.showEmpty('After uploading your Watchlist, daily digests will appear here.');
+        this.updateStatus('Ready', false);
+      }
+      return;
+    }
+
+    const digestDate = new Date(this.digest.created_at);
+    const today = new Date();
+    
+    const isSameDay = digestDate.getDate() === today.getDate() &&
+                      digestDate.getMonth() === today.getMonth() &&
+                      digestDate.getFullYear() === today.getFullYear();
+    
+    if (!isSameDay) {
+      console.log('[Pulse] Digest is not from today, attempting generation');
+      console.log(`[Pulse] Last digest: ${digestDate.toLocaleDateString()}, Today: ${today.toLocaleDateString()}`);
       await this.generateDigest();
     } else {
-      console.log('[Pulse] No digest and no watchlist, waiting for upload');
-      this.showEmpty('After uploading your Watchlist, daily digests will appear here.');
-      this.updateStatus('Ready', false);
+      console.log('[Pulse] Digest is current, no generation needed');
     }
-    return;
   }
 
-  const digestDate = new Date(this.digest.created_at);
-  const today = new Date();
-  
-  const isSameDay = digestDate.getDate() === today.getDate() &&
-                    digestDate.getMonth() === today.getMonth() &&
-                    digestDate.getFullYear() === today.getFullYear();
-  
-  if (!isSameDay) {
-    console.log('[Pulse] Digest is not from today, generating new one');
-    console.log(`[Pulse] Last digest: ${digestDate.toLocaleDateString()}, Today: ${today.toLocaleDateString()}`);
-    await this.generateDigest();
-  } else {
-    console.log('[Pulse] Digest is current, no generation needed');
+  // Check if watchlist exists
+  async hasWatchlistUploaded() {
+    try {
+      const response = await fetch(`${PULSE_CONFIG.VERTESIA_BASE_URL}/objects?limit=100`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${PULSE_CONFIG.VERTESIA_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) return false;
+
+      const objects = await response.json();
+      const objectsArray = Array.isArray(objects) ? objects : objects.objects || [];
+      
+      return objectsArray.some(obj => 
+        (obj.name && obj.name.startsWith('My Watchlist:')) || 
+        (obj.properties && obj.properties.type === 'watchlist')
+      );
+    } catch (error) {
+      console.error('[Pulse] Failed to check for watchlist:', error);
+      return false;
+    }
   }
-}
-
-// Add this helper method
-async hasWatchlistUploaded() {
-  try {
-    const response = await fetch(`${PULSE_CONFIG.VERTESIA_BASE_URL}/objects?limit=100`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${PULSE_CONFIG.VERTESIA_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) return false;
-
-    const objects = await response.json();
-    const objectsArray = Array.isArray(objects) ? objects : objects.objects || [];
-    
-    return objectsArray.some(obj => 
-      (obj.name && obj.name.startsWith('My Watchlist:')) || 
-      (obj.properties && obj.properties.type === 'watchlist')
-    );
-  } catch (error) {
-    console.error('[Pulse] Failed to check for watchlist:', error);
-    return false;
-  }
-}
 
   // Scheduler for daily auto-generation
   scheduleDigestAt(timeStr) {
@@ -497,27 +607,37 @@ async hasWatchlistUploaded() {
   }
 
   // Manual or scheduled digest generation
-async generateDigest() {
-  if (this.isGenerating) {
-    console.log('[Pulse] Generation already in progress');
-    return;
-  }
-  
-  this.isGenerating = true;
-  this.updateStatus('Generating...', false);
-  // Only show overlay if no existing content
-  if (this.allDigests.length === 0) {
-    this.showLoadingOverlay(true);
-  }
+  async generateDigest() {
+    // Gate check: Don't allow if we've sent a request in the last 12 hours
+    if (!this.canGenerate()) {
+      const timeRemaining = this.getTimeUntilNextGeneration();
+      const formattedTime = this.formatTimeRemaining(timeRemaining);
+      
+      console.log(`[Pulse] Generation blocked by 12-hour gate. ${formattedTime} remaining.`);
+      return;
+    }
     
-    const refreshBtn = document.getElementById('watchlistRefreshBtn');
-    const changeBtn = document.getElementById('watchlistChangeBtn');
+    if (this.isGenerating) {
+      console.log('[Pulse] Generation already in progress');
+      return;
+    }
     
-    if (refreshBtn) refreshBtn.disabled = true;
-    if (changeBtn) changeBtn.disabled = true;
+    this.isGenerating = true;
+    this.updateStatus('Generating...', false);
+    
+    // Only show overlay if no existing content
+    if (this.allDigests.length === 0) {
+      this.showLoadingOverlay(true);
+    }
 
     try {
+      // SEND REQUEST TO VERTESIA - CLOSE THE GATE HERE
       await this.pulseAPI.executeAsync({ Task: 'begin' });
+      
+      // Gate closed for 12 hours
+      localStorage.setItem('pulse_last_generation', new Date().toISOString());
+      console.log('[Pulse] Generation request sent. Gate closed for 12 hours.');
+      
       await new Promise(resolve => setTimeout(resolve, PULSE_CONFIG.GENERATION_WAIT_MS));
       await this.loadAllDigests();
       
@@ -528,19 +648,18 @@ async generateDigest() {
     } finally {
       this.isGenerating = false;
       this.showLoadingOverlay(false);
-      
-      if (refreshBtn) refreshBtn.disabled = false;
-      if (changeBtn) changeBtn.disabled = false;
     }
   }
 
   // Load all digests from Vertesia object store
-async loadAllDigests() {
-  this.updateStatus('Loading...', false);
-  // Only show overlay if no existing content to display
-  if (this.allDigests.length === 0) {
-    this.showLoadingOverlay(true);
-  }
+  async loadAllDigests() {
+    this.updateStatus('Loading...', false);
+    
+    // Only show overlay if no existing content to display
+    if (this.allDigests.length === 0) {
+      this.showLoadingOverlay(true);
+    }
+    
     try {
       const response = await this.pulseAPI.loadAllObjects(1000);
       const objects = response.objects || [];
@@ -614,10 +733,10 @@ async loadAllDigests() {
       this.updateStatus('Active', true);
       this.showLoadingOverlay(false);
 
-} catch (error) {
+    } catch (error) {
       console.error('[Pulse] Failed to load digests:', error);
       this.updateStatus('No Digest', false);
-      this.showLoadingOverlay(false); 
+      this.showLoadingOverlay(false);
       this.digest = null;
       this.allDigests = [];
       this.updateNavButtons();
@@ -742,7 +861,11 @@ async loadAllDigests() {
       lastUpdate.textContent = `Last Update: ${createdDate.toLocaleString()}`;
     }
 
-    container.innerHTML = this.digest.articles.map(article => `
+    // Keep the loading overlay element, preserve it in the HTML
+    const loadingOverlay = container.querySelector('.pulse-loading-overlay');
+    const overlayHTML = loadingOverlay ? loadingOverlay.outerHTML : '';
+    
+    container.innerHTML = overlayHTML + this.digest.articles.map(article => `
       <div class="pulse-article">
         <div class="pulse-article-header">
           <div class="pulse-article-title">${this.formatMarkdown(article.title)}</div>
@@ -795,7 +918,11 @@ async loadAllDigests() {
   showEmpty(message) {
     const container = document.getElementById('pulseArticlesContainer');
     if (container) {
-      container.innerHTML = `
+      // Keep the loading overlay element
+      const loadingOverlay = container.querySelector('.pulse-loading-overlay');
+      const overlayHTML = loadingOverlay ? loadingOverlay.outerHTML : '';
+      
+      container.innerHTML = overlayHTML + `
         <div class="pulse-empty-state">
           <p>${message}</p>
         </div>
