@@ -630,13 +630,14 @@ class PortfolioPulseWidget {
       this.showLoadingOverlay(true);
     }
 
-    try {
-      // SEND REQUEST TO VERTESIA - CLOSE THE GATE HERE
-      await this.pulseAPI.executeAsync({ Task: 'begin' });
-      
-      // Gate closed for 12 hours
-      localStorage.setItem('pulse_last_generation', new Date().toISOString());
-      console.log('[Pulse] Generation request sent. Gate closed for 12 hours.');
+  try {
+  // CLOSE THE GATE IMMEDIATELY (before API call)
+  localStorage.setItem('pulse_last_generation', new Date().toISOString());
+  console.log('[Pulse] Gate closed for 12 hours. Sending generation request...');
+  
+  // SEND REQUEST TO VERTESIA
+  await this.pulseAPI.executeAsync({ Task: 'begin' });
+  console.log('[Pulse] Generation request sent successfully.');
       
       await new Promise(resolve => setTimeout(resolve, PULSE_CONFIG.GENERATION_WAIT_MS));
       await this.loadAllDigests();
