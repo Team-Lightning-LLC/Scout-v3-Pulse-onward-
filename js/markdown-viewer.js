@@ -399,6 +399,9 @@ class MarkdownViewer {
     
     this.addThinkingMessage();
     
+    // FIX: Reset the answer flag before starting new request
+    this.hasReceivedAnswer = false;
+    
     try {
       console.log('Sending message for document:', this.currentDocId);
       
@@ -444,7 +447,11 @@ class MarkdownViewer {
 if (data.type === 'answer' && data.message && !this.hasReceivedAnswer) {
   this.hasReceivedAnswer = true;  // Flag to ignore subsequent answers
   this.removeThinkingMessage();
-  this.addMessage('assistant', data.message);
+  
+  // FIX: Extract clean answer from structured agent response
+  const cleanAnswer = vertesiaAPI.extractAnswer(data.message);
+  this.addMessage('assistant', cleanAnswer);
+  
   this.reEnableInput();
 }
       },
