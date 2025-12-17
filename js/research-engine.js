@@ -14,7 +14,10 @@ class ResearchEngine {
       overviewDetails: job.data.modifiers["Overview Details"],
       analyticalRigor: job.data.modifiers["Analytical Rigor"],
       perspective: job.data.modifiers.perspective,
-      startTime: job.startTime
+      startTime: job.startTime,
+      // FIX: Persist run IDs for status polling after page refresh
+      runId: job.runId || null,
+      workflowId: job.workflowId || null
     }));
     
     try {
@@ -60,6 +63,12 @@ class ResearchEngine {
     savedJobs.forEach(savedJob => {
       const elapsed = (Date.now() - savedJob.startTime) / 1000;
       
+      // FIX: Skip jobs older than 30 minutes
+      if (elapsed > 1800) {
+        console.log('Skipping expired job (>30 min old)');
+        return;
+      }
+      
       const job = {
         data: {
           capability: savedJob.capability,
@@ -72,33 +81,24 @@ class ResearchEngine {
           }
         },
         startTime: savedJob.startTime,
+        // FIX: Restore run IDs for status polling
+        runId: savedJob.runId || null,
+        workflowId: savedJob.workflowId || null,
         timers: { 
-          refresh: null,
-          autoDecrement: null
+          statusPoll: null
         }
       };
       
       this.currentJobs.push(job);
       
-      // If less than 5 minutes elapsed, set auto-decrement timer for remaining time
-      if (elapsed < 300) {
-        const remaining = 300 - elapsed;
-        job.timers.autoDecrement = setTimeout(() => {
-          this.autoDecrementJob(job);
-        }, remaining * 1000);
-        
-        // Also start polling after remaining time
-        setTimeout(() => {
-          this.startJobPolling(job);
-        }, remaining * 1000);
-      } else {
-        // More than 5 minutes passed, start polling now and set immediate decrement
-        job.timers.autoDecrement = setTimeout(() => {
-          this.autoDecrementJob(job);
-        }, 100); // Decrement almost immediately
-        
-        this.startJobPolling(job);
-      }
+      // FIX: Resume status polling for all restored jobs
+      console.log('Resuming polling for restored job:', {
+        runId: job.runId,
+        workflowId: job.workflowId,
+        elapsed: Math.round(elapsed) + 's'
+      });
+      
+      this.startStatusPolling(job);
     });
     
     this.updateBadge();
@@ -115,28 +115,29 @@ class ResearchEngine {
       // Log to research history
       this.logResearchHistory(researchData);
 
+      // FIX: Store runId and workflowId for status polling
       const newJob = {
         data: researchData,
         startTime: Date.now(),
+        runId: jobResponse.runId || null,
+        workflowId: jobResponse.workflowId || null,
         timers: { 
-          refresh: null,
-          autoDecrement: null
+          statusPoll: null
         }
       };
+
+      console.log('Research job started:', {
+        runId: newJob.runId,
+        workflowId: newJob.workflowId
+      });
 
       this.currentJobs.push(newJob);
       this.saveJobsState();
       this.updateBadge();
       
-      // Set 5-minute auto-decrement timer
-      newJob.timers.autoDecrement = setTimeout(() => {
-        this.autoDecrementJob(newJob);
-      }, 5 * 60 * 1000); // 5 minutes
-      
-      // Start polling after 5 minutes
-      setTimeout(() => {
-        this.startJobPolling(newJob);
-      }, 5 * 60 * 1000);
+      // FIX: Start polling run status immediately (every 15 seconds)
+      // instead of waiting 5 minutes with a hardcoded timer
+      this.startStatusPolling(newJob);
 
     } catch (error) {
       console.error('Failed to start research:', error);
@@ -144,16 +145,64 @@ class ResearchEngine {
     }
   }
 
-  autoDecrementJob(job) {
-    const jobIndex = this.currentJobs.indexOf(job);
-    if (jobIndex === -1) return; // Job already removed
+  // FIX: New method to poll actual run status
+  startStatusPolling(job) {
+    // Poll every 15 seconds
+    const POLL_INTERVAL = 15000;
+    const MAX_POLL_TIME = 30 * 60 * 1000; // 30 minute max
     
-    // Clear timers
-    if (job.timers.refresh) {
-      clearInterval(job.timers.refresh);
-    }
-    if (job.timers.autoDecrement) {
-      clearTimeout(job.timers.autoDecrement);
+    const startTime = Date.now();
+    
+    job.timers.statusPoll = setInterval(async () => {
+      try {
+        // Safety: stop polling after 30 minutes
+        if (Date.now() - startTime > MAX_POLL_TIME) {
+          console.log('Research job timed out after 30 minutes');
+          this.completeJob(job);
+          return;
+        }
+
+        // If we have workflowId/runId, check actual status
+        if (job.workflowId && job.runId) {
+          const status = await vertesiaAPI.getRunStatus(job.workflowId, job.runId);
+          console.log('Run status:', status);
+          
+          if (status) {
+            // Check for completion states
+            const runStatus = status.status || status.state || '';
+            const isComplete = ['completed', 'finished', 'done', 'success'].includes(runStatus.toLowerCase());
+            const isFailed = ['failed', 'error', 'cancelled'].includes(runStatus.toLowerCase());
+            
+            if (isComplete || isFailed) {
+              console.log(`Research job ${isComplete ? 'completed' : 'failed'}:`, runStatus);
+              this.completeJob(job);
+              
+              // Refresh document library to show new doc
+              if (isComplete && window.app) {
+                await window.app.refreshDocuments();
+              }
+              return;
+            }
+          }
+        }
+        
+        // Fallback: also check for new documents appearing
+        await this.checkForNewDocuments();
+        
+      } catch (error) {
+        console.error('Error polling job status:', error);
+      }
+    }, POLL_INTERVAL);
+  }
+
+  // FIX: Clean job completion
+  completeJob(job) {
+    const jobIndex = this.currentJobs.indexOf(job);
+    if (jobIndex === -1) return;
+    
+    // Clear timer
+    if (job.timers.statusPoll) {
+      clearInterval(job.timers.statusPoll);
     }
     
     // Remove job
@@ -161,8 +210,10 @@ class ResearchEngine {
     this.saveJobsState();
     this.updateBadge();
     
-    console.log('Job auto-decremented after 5 minutes');
+    console.log('Research job removed from queue');
   }
+
+  // REMOVED: autoDecrementJob - replaced by completeJob
 
   buildResearchPrompt(data) {
     let prompt = '';
@@ -191,7 +242,7 @@ Hyperlink the sources. You Must use hyperlinks for the sources of this singular 
       prompt += `
 Utilize Web Search to develop a singular document utilizing the following structure as the guide to provide users with a valuable research document: 
 Analysis Type: ${data.capability}
-Framework: ${data.framework} (access the relevant framework from the content objects space where document is titled "X: Framework and Methodology")
+Framework: ${data.framework}
 
 Utilize this context to gain additional insight into your research topic:
 ${data.context}
@@ -228,13 +279,7 @@ Always capture the most recent and reliable data. The final output must be a doc
     }
   }
 
-  startJobPolling(job) {
-    this.checkForNewDocuments();
-    
-    job.timers.refresh = setInterval(() => {
-      this.checkForNewDocuments();
-    }, 10000);
-  }
+  // REMOVED: startJobPolling - replaced by startStatusPolling
 
   async checkForNewDocuments() {
     try {
@@ -253,22 +298,12 @@ Always capture the most recent and reliable data. The final output must be a doc
     }
   }
 
+  // FIX: Simplified - now just uses completeJob
   handleNewDocuments(count) {
     for (let i = 0; i < count && this.currentJobs.length > 0; i++) {
       const completedJob = this.currentJobs[0];
-      
-      if (completedJob.timers.refresh) {
-        clearInterval(completedJob.timers.refresh);
-      }
-      if (completedJob.timers.autoDecrement) {
-        clearTimeout(completedJob.timers.autoDecrement);
-      }
-      
-      this.currentJobs.shift();
+      this.completeJob(completedJob);
     }
-    
-    this.saveJobsState();
-    this.updateBadge();
   }
 
   logResearchHistory(researchData) {
