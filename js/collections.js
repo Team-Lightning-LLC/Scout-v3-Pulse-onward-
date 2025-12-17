@@ -1,30 +1,101 @@
-// Collections System v2 - Clean with sorting
+// Collections System v3 - Vertesia API Integration
+// Now syncs with server instead of localStorage
+
 class CollectionsManager {
   constructor(app) {
     this.app = app;
     this.collections = [];
-    this.selectedCollections = new Set(); // Empty = show all
-    this.sortMode = 'most'; // 'most', 'least', 'alphabetical'
+    this.collectionMembers = {}; // Cache: collectionId -> [docIds]
+    this.selectedCollections = new Set();
+    this.sortMode = 'most';
     
     this.init();
   }
 
-  init() {
-    this.loadCollections();
+  async init() {
+    await this.loadCollections();
     this.renderCollections();
     this.setupEventListeners();
-    console.log('Collections v2 initialized');
+    console.log('Collections v3 (API) initialized');
   }
 
-  // ===== STORAGE =====
+  // ===== API METHODS =====
 
-  loadCollections() {
-    const stored = localStorage.getItem('scout_collections');
-    this.collections = stored ? JSON.parse(stored) : [];
+  async apiCall(endpoint, options = {}) {
+    const url = `${CONFIG.VERTESIA_API_BASE}${endpoint}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${CONFIG.VERTESIA_API_KEY}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
   }
 
-  saveCollections() {
-    localStorage.setItem('scout_collections', JSON.stringify(this.collections));
+  // Load all collections from Vertesia
+  async loadCollections() {
+    try {
+      console.log('Loading collections from API...');
+      
+      // Search for all static collections
+      const collections = await this.apiCall('/collections/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          dynamic: false,
+          status: 'active',
+          limit: 100
+        })
+      });
+
+      this.collections = (collections || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description || '',
+        created_at: c.created_at
+      }));
+
+      console.log(`Loaded ${this.collections.length} collections`);
+
+      // Load members for each collection
+      await this.loadAllCollectionMembers();
+
+    } catch (error) {
+      console.error('Failed to load collections:', error);
+      this.collections = [];
+    }
+  }
+
+  // Load members for all collections
+  async loadAllCollectionMembers() {
+    this.collectionMembers = {};
+    
+    for (const collection of this.collections) {
+      try {
+        const members = await this.apiCall(`/collections/${collection.id}/members?limit=1000`);
+        this.collectionMembers[collection.id] = (members || []).map(m => m.id);
+      } catch (error) {
+        console.error(`Failed to load members for collection ${collection.id}:`, error);
+        this.collectionMembers[collection.id] = [];
+      }
+    }
+  }
+
+  // Get document count for a collection
+  getDocumentCount(collectionId) {
+    return (this.collectionMembers[collectionId] || []).length;
+  }
+
+  // Check if document is in collection
+  isDocumentInCollection(docId, collectionId) {
+    return (this.collectionMembers[collectionId] || []).includes(docId);
   }
 
   // ===== EVENT LISTENERS =====
@@ -64,7 +135,6 @@ class CollectionsManager {
   setSortMode(mode) {
     this.sortMode = mode;
     
-    // Update active button
     document.querySelectorAll('.sort-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.sort === mode);
     });
@@ -77,9 +147,9 @@ class CollectionsManager {
     
     switch (this.sortMode) {
       case 'most':
-        return sorted.sort((a, b) => b.document_ids.length - a.document_ids.length);
+        return sorted.sort((a, b) => this.getDocumentCount(b.id) - this.getDocumentCount(a.id));
       case 'least':
-        return sorted.sort((a, b) => a.document_ids.length - b.document_ids.length);
+        return sorted.sort((a, b) => this.getDocumentCount(a.id) - this.getDocumentCount(b.id));
       case 'alphabetical':
         return sorted.sort((a, b) => a.name.localeCompare(b.name));
       default:
@@ -107,6 +177,7 @@ class CollectionsManager {
     const sortedCollections = this.getSortedCollections();
     const userHtml = sortedCollections.map(c => {
       const selected = this.selectedCollections.has(c.id);
+      const count = this.getDocumentCount(c.id);
       return `
         <div class="collection-item ${selected ? 'selected' : ''}" data-collection-id="${c.id}">
           <div class="collection-checkbox">
@@ -114,7 +185,7 @@ class CollectionsManager {
           </div>
           <div class="collection-info">
             <div class="collection-name">${c.name}</div>
-            <div class="collection-count">${c.document_ids.length}</div>
+            <div class="collection-count">${count}</div>
           </div>
           <button class="btn-delete-collection" title="Delete">×</button>
         </div>
@@ -139,15 +210,12 @@ class CollectionsManager {
 
   // Check if document should be shown based on selected collections
   shouldShowDocument(docId) {
-    // If nothing selected, show all documents
     if (this.selectedCollections.size === 0) {
       return true;
     }
 
-    // Check if document is in any selected collection
     for (const collectionId of this.selectedCollections) {
-      const collection = this.collections.find(c => c.id === collectionId);
-      if (collection && collection.document_ids.includes(docId)) {
+      if (this.isDocumentInCollection(docId, collectionId)) {
         return true;
       }
     }
@@ -155,33 +223,118 @@ class CollectionsManager {
     return false;
   }
 
-  // ===== CRUD =====
+  // ===== CRUD OPERATIONS =====
 
-  createCollection() {
+  async createCollection() {
     const name = prompt('Collection name:');
     if (!name || !name.trim()) return;
 
-    const newCollection = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      document_ids: [],
-      created: new Date().toISOString()
-    };
+    try {
+      console.log('Creating collection:', name);
+      
+      const newCollection = await this.apiCall('/collections', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          dynamic: false,
+          description: `Created from MarketLens on ${new Date().toLocaleDateString()}`
+        })
+      });
 
-    this.collections.push(newCollection);
-    this.saveCollections();
-    this.renderCollections();
+      console.log('Collection created:', newCollection);
+
+      // Add to local list
+      this.collections.push({
+        id: newCollection.id,
+        name: newCollection.name,
+        description: newCollection.description || '',
+        created_at: newCollection.created_at
+      });
+      this.collectionMembers[newCollection.id] = [];
+
+      this.renderCollections();
+
+    } catch (error) {
+      console.error('Failed to create collection:', error);
+      alert('Failed to create collection. Please try again.');
+    }
   }
 
-  deleteCollection(collectionId) {
+  async deleteCollection(collectionId) {
     if (!confirm('Delete this collection? Documents will not be deleted.')) return;
 
-    this.collections = this.collections.filter(c => c.id !== collectionId);
-    this.selectedCollections.delete(collectionId);
+    try {
+      console.log('Deleting collection:', collectionId);
+      
+      await this.apiCall(`/collections/${collectionId}`, {
+        method: 'DELETE'
+      });
 
-    this.saveCollections();
-    this.renderCollections();
-    this.app.filterAndRenderDocuments();
+      // Remove from local list
+      this.collections = this.collections.filter(c => c.id !== collectionId);
+      delete this.collectionMembers[collectionId];
+      this.selectedCollections.delete(collectionId);
+
+      this.renderCollections();
+      this.app.filterAndRenderDocuments();
+
+    } catch (error) {
+      console.error('Failed to delete collection:', error);
+      alert('Failed to delete collection. Please try again.');
+    }
+  }
+
+  // Add document to collection
+  async addDocumentToCollection(docId, collectionId) {
+    try {
+      console.log(`Adding document ${docId} to collection ${collectionId}`);
+      
+      await this.apiCall(`/collections/${collectionId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'add',
+          members: [docId]
+        })
+      });
+
+      // Update local cache
+      if (!this.collectionMembers[collectionId]) {
+        this.collectionMembers[collectionId] = [];
+      }
+      if (!this.collectionMembers[collectionId].includes(docId)) {
+        this.collectionMembers[collectionId].push(docId);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to add document to collection:', error);
+      return false;
+    }
+  }
+
+  // Remove document from collection
+  async removeDocumentFromCollection(docId, collectionId) {
+    try {
+      console.log(`Removing document ${docId} from collection ${collectionId}`);
+      
+      await this.apiCall(`/collections/${collectionId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'delete',
+          members: [docId]
+        })
+      });
+
+      // Update local cache
+      if (this.collectionMembers[collectionId]) {
+        this.collectionMembers[collectionId] = this.collectionMembers[collectionId].filter(id => id !== docId);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to remove document from collection:', error);
+      return false;
+    }
   }
 
   // Modal for adding documents to collections
@@ -198,10 +351,10 @@ class CollectionsManager {
         <div class="collection-modal-header">Add to Collections</div>
         <div class="collection-modal-list">
           ${this.collections.map(c => {
-            const checked = c.document_ids.includes(documentId);
+            const checked = this.isDocumentInCollection(documentId, c.id);
             return `
               <label class="collection-checkbox-item">
-                <input type="checkbox" value="${c.id}" ${checked ? 'checked' : ''}>
+                <input type="checkbox" value="${c.id}" ${checked ? 'checked' : ''} data-was-checked="${checked}">
                 <span>${c.name}</span>
               </label>
             `;
@@ -223,21 +376,27 @@ class CollectionsManager {
       if (e.target === modal) close();
     });
 
-    modal.querySelector('.btn-modal-save').addEventListener('click', () => {
+    modal.querySelector('.btn-modal-save').addEventListener('click', async () => {
       const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
+      const saveBtn = modal.querySelector('.btn-modal-save');
       
-      checkboxes.forEach(cb => {
-        const collection = this.collections.find(c => c.id === cb.value);
-        if (cb.checked) {
-          if (!collection.document_ids.includes(documentId)) {
-            collection.document_ids.push(documentId);
-          }
-        } else {
-          collection.document_ids = collection.document_ids.filter(id => id !== documentId);
+      // Disable button during save
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      
+      for (const cb of checkboxes) {
+        const collectionId = cb.value;
+        const wasChecked = cb.dataset.wasChecked === 'true';
+        const isChecked = cb.checked;
+        
+        // Only make API calls for changes
+        if (isChecked && !wasChecked) {
+          await this.addDocumentToCollection(documentId, collectionId);
+        } else if (!isChecked && wasChecked) {
+          await this.removeDocumentFromCollection(documentId, collectionId);
         }
-      });
+      }
 
-      this.saveCollections();
       this.renderCollections();
       this.app.filterAndRenderDocuments();
       close();
@@ -256,6 +415,13 @@ class CollectionsManager {
     }).filter(Boolean);
 
     return names.join(' + ');
+  }
+
+  // Get collections a document belongs to (for display)
+  getDocumentCollections(docId) {
+    return this.collections.filter(c => 
+      this.isDocumentInCollection(docId, c.id)
+    );
   }
 }
 
