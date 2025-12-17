@@ -214,7 +214,7 @@ class LibraryChatManager {
       },
       body: JSON.stringify({
         type: 'conversation',
-        interaction: 'Generalchat',
+        interaction: 'document-chat',
         data: { task },
         config: {
           environment: CONFIG.ENVIRONMENT_ID,
