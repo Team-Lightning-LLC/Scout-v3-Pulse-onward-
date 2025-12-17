@@ -8,12 +8,574 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/collections.css">
   <link rel="stylesheet" href="css/pulse-styles.css">
-  <!-- NEW: Library Chat Styles -->
   <link rel="stylesheet" href="css/library-chat.css">
   
-  <!-- Required libraries for markdown processing -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- Inline critical chat styles as backup -->
+  <style>
+    /* Chat container - critical layout */
+    #chatContainer {
+      display: none;
+      flex-direction: row;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    
+    /* When chat is active */
+    #chatContainer[style*="flex"] {
+      display: flex !important;
+    }
+    
+    /* Sidebar */
+    .chat-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #e0e5ea;
+      background: white;
+      overflow: hidden;
+    }
+    
+    .chat-sidebar-header {
+      padding: 12px;
+      border-bottom: 1px solid #e0e5ea;
+      flex-shrink: 0;
+    }
+    
+    .new-chat-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      background: #172A3A;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .save-chat-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 10px;
+      margin-top: 8px;
+      background: transparent;
+      color: #172A3A;
+      border: 1px dashed #e0e5ea;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    
+    .chat-history-section {
+      padding: 10px 12px 6px;
+      flex-shrink: 0;
+    }
+    
+    .chat-history-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #6c7a89;
+      text-transform: uppercase;
+    }
+    
+    .chat-history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 8px 12px;
+      min-height: 0;
+    }
+    
+    .chat-history-empty {
+      padding: 16px 12px;
+      text-align: center;
+      color: #6c7a89;
+      font-size: 11px;
+    }
+    
+    .chat-history-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      margin-bottom: 2px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .chat-history-item:hover {
+      background: #f8f9fb;
+    }
+    
+    .chat-history-item.active {
+      background: rgba(23, 42, 58, 0.08);
+    }
+    
+    .chat-history-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fb;
+      border-radius: 6px;
+      color: #172A3A;
+      flex-shrink: 0;
+    }
+    
+    .chat-history-item.active .chat-history-icon {
+      background: #172A3A;
+      color: white;
+    }
+    
+    .chat-history-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .chat-history-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: #1f2d3d;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .chat-history-meta {
+      font-size: 10px;
+      color: #6c7a89;
+    }
+    
+    .chat-history-star {
+      color: #d1d5db;
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0;
+    }
+    
+    .chat-history-item:hover .chat-history-star {
+      opacity: 1;
+    }
+    
+    .chat-history-star.starred {
+      opacity: 1;
+      color: #f59e0b;
+    }
+    
+    /* CRITICAL: Main chat area */
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: #fafbfc;
+    }
+    
+    /* CRITICAL: Scrollable messages */
+    .chat-messages-area {
+      flex: 1 1 0;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    
+    /* Message styles */
+    .chat-msg {
+      display: flex;
+      gap: 10px;
+      max-width: 85%;
+      animation: msgIn 0.25s ease;
+    }
+    
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .chat-msg.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    
+    .chat-msg.ai {
+      align-self: flex-start;
+    }
+    
+    .chat-msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .chat-msg.user .chat-msg-avatar {
+      background: linear-gradient(135deg, #4a9da8 0%, #3d8891 100%);
+      color: white;
+    }
+    
+    .chat-msg.ai .chat-msg-avatar {
+      background: #172A3A;
+      color: white;
+    }
+    
+    .chat-msg-content {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    
+    .chat-msg-bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      word-wrap: break-word;
+    }
+    
+    .chat-msg.user .chat-msg-bubble {
+      background: linear-gradient(135deg, #4a9da8 0%, #3d8891 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .chat-msg.ai .chat-msg-bubble {
+      background: white;
+      color: #1f2d3d;
+      border: 1px solid #e0e5ea;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    
+    .chat-msg.ai .chat-msg-bubble p {
+      margin: 0 0 8px 0;
+    }
+    
+    .chat-msg.ai .chat-msg-bubble p:last-child {
+      margin-bottom: 0;
+    }
+    
+    .chat-msg-time {
+      font-size: 10px;
+      color: #6c7a89;
+      padding: 0 4px;
+    }
+    
+    .chat-msg.user .chat-msg-time {
+      text-align: right;
+    }
+    
+    /* Thinking animation */
+    .chat-msg.thinking .chat-msg-bubble {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 14px 20px;
+    }
+    
+    .thinking-dot {
+      width: 7px;
+      height: 7px;
+      background: #172A3A;
+      border-radius: 50%;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes pulse {
+      0%, 60%, 100% { transform: scale(0.6); opacity: 0.4; }
+      30% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Welcome state */
+    .chat-welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px 20px;
+      color: #6c7a89;
+    }
+    
+    .chat-welcome-icon {
+      width: 64px;
+      height: 64px;
+      background: #f3f4f6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      color: #172A3A;
+    }
+    
+    .chat-welcome h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2d3d;
+      margin: 0 0 6px 0;
+    }
+    
+    .chat-welcome p {
+      font-size: 13px;
+      max-width: 320px;
+      line-height: 1.5;
+      margin: 0;
+    }
+    
+    /* Input area */
+    .chat-input-area {
+      padding: 12px 16px 16px;
+      background: white;
+      border-top: 1px solid #e0e5ea;
+      flex-shrink: 0;
+      position: relative;
+    }
+    
+    .chat-collection-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .collection-indicator-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #6c7a89;
+      text-transform: uppercase;
+    }
+    
+    .collection-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      background: rgba(23, 42, 58, 0.08);
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #172A3A;
+    }
+    
+    .collection-tag.all-docs {
+      background: linear-gradient(135deg, rgba(74, 157, 168, 0.12) 0%, rgba(23, 42, 58, 0.08) 100%);
+    }
+    
+    .collection-tag-remove {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: #6c7a89;
+      font-size: 14px;
+      line-height: 1;
+    }
+    
+    .collection-tag-remove:hover {
+      color: #ef4444;
+    }
+    
+    .collection-selector-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: #f8f9fb;
+      border: 1px dashed #e0e5ea;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #6c7a89;
+    }
+    
+    .collection-selector-btn:hover {
+      background: white;
+      border-color: #172A3A;
+      color: #172A3A;
+    }
+    
+    /* Collection popup */
+    .collection-selector-popup {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 16px;
+      right: 16px;
+      background: white;
+      border: 1px solid #e0e5ea;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      z-index: 100;
+      display: none;
+    }
+    
+    .collection-selector-popup.open {
+      display: block;
+    }
+    
+    .collection-selector-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .collection-selector-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #172A3A;
+    }
+    
+    .collection-selector-close {
+      background: none;
+      border: none;
+      color: #6c7a89;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px;
+    }
+    
+    .collection-selector-list {
+      padding: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .collection-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .collection-option:hover {
+      background: #f8f9fb;
+    }
+    
+    .collection-option.selected {
+      background: rgba(23, 42, 58, 0.06);
+    }
+    
+    .collection-option input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #172A3A;
+      cursor: pointer;
+    }
+    
+    .collection-option-name {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1f2d3d;
+    }
+    
+    .collection-option-count {
+      font-size: 10px;
+      color: #6c7a89;
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+    
+    .collection-option.all-docs-option {
+      border-bottom: 1px solid #f3f4f6;
+      margin-bottom: 4px;
+      padding-bottom: 10px;
+    }
+    
+    .collection-option.all-docs-option .collection-option-name {
+      font-weight: 600;
+      color: #172A3A;
+    }
+    
+    /* Input row */
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    
+    .chat-input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+    
+    .chat-input {
+      width: 100%;
+      padding: 12px 48px 12px 16px;
+      border: 2px solid #e0e5ea;
+      border-radius: 20px;
+      font-size: 13px;
+      resize: none;
+      min-height: 44px;
+      max-height: 100px;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+    
+    .chat-input:focus {
+      outline: none;
+      border-color: #172A3A;
+      box-shadow: 0 0 0 3px rgba(23, 42, 58, 0.08);
+    }
+    
+    .chat-send-button {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      width: 32px;
+      height: 32px;
+      background: #172A3A;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .chat-send-button:hover:not(:disabled) {
+      background: #0f1f2d;
+    }
+    
+    .chat-send-button:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
@@ -49,7 +611,6 @@
     <aside class="left">
       <div class="panel-head">
         <span class="panel-header">Library</span>
-        <!-- UPDATED: View Toggle with Chat enabled -->
         <div class="view-toggle">
           <button class="view-toggle-btn active" id="viewLibrary" data-tooltip="View your research document library">Research</button>
           <button class="view-toggle-btn" id="viewPulse" data-tooltip="View personalized digest articles based on your interests">Pulse</button>
@@ -60,22 +621,17 @@
       <div class="left-body">
         <!-- Library View (Default) -->
         <div id="libraryContainer">
-          <!-- Search -->
           <div class="searchBox" style="padding:0 0 8px 0">
             <input id="docSearch" placeholder="Search documents…"/>
           </div>
           
-          <!-- Collections Navigation Section -->
           <div class="collections-section">
             <div class="section-header">
               <span class="section-title">Collections</span>
             </div>
-            <div id="collectionsList" class="collections-list">
-              <!-- Collections populated by JS -->
-            </div>
+            <div id="collectionsList" class="collections-list"></div>
           </div>
           
-          <!-- Documents Viewing Section -->
           <div class="documents-section">
             <div class="docs-header" id="docsHeader">All Documents</div>
             <div class="docs-scroll" id="docsPane">
@@ -84,9 +640,8 @@
           </div>
         </div>
 
-        <!-- Portfolio Pulse View (Hidden by default) -->
+        <!-- Portfolio Pulse View -->
         <div id="pulseContainer">
-          <!-- Pulse Header -->
           <div class="pulse-header">
             <div class="pulse-title-row">
               <div class="pulse-title-section">
@@ -136,9 +691,7 @@
             <div class="pulse-section-header">Daily Articles</div>
           </div>
 
-          <!-- Articles Container -->
           <div class="pulse-articles-container" id="pulseArticlesContainer">
-            <!-- Loading Overlay -->
             <div class="pulse-loading-overlay" id="pulseLoadingOverlay" style="display: none;">
               <div class="pulse-loading-content">
                 <div class="pulse-spinner"></div>
@@ -151,7 +704,6 @@
             </div>
           </div>
 
-          <!-- Pulse Footer -->
           <div class="pulse-footer">
             <div class="pulse-status-indicator">
               <span class="pulse-status-dot" id="pulseStatusDot"></span>
@@ -161,109 +713,80 @@
           </div>
         </div>
 
-        <!-- NEW: Library Chat View -->
-        <div id="chatContainer" class="chat-layout">
+        <!-- Library Chat View -->
+        <div id="chatContainer" style="display: none; flex-direction: row; height: 100%; min-height: 0; overflow: hidden;">
           
-          <!-- Left Sidebar: Chat History -->
+          <!-- Sidebar -->
           <div class="chat-sidebar">
             <div class="chat-sidebar-header">
               <button class="new-chat-btn" id="newChatBtn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
                 New Chat
               </button>
               <button class="save-chat-btn" id="saveChatBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                  <polyline points="17 21 17 13 7 13 7 21"/>
-                  <polyline points="7 3 7 8 15 8"/>
                 </svg>
-                Save Current Chat
+                Save Chat
               </button>
             </div>
             
-            <!-- Starred Section -->
-            <div class="chat-history-section" id="starredChatsSection" style="display: none;">
-              <div class="chat-history-title">Starred</div>
+            <div class="chat-history-section">
+              <div class="chat-history-title">Saved</div>
             </div>
             
-            <!-- Recent Section -->
-            <div class="chat-history-section" id="recentChatsSection">
-              <div class="chat-history-title">Recent</div>
-            </div>
-            
-            <!-- Chat History List -->
             <div class="chat-history-list" id="chatHistoryList">
-              <!-- Populated by JS -->
+              <div class="chat-history-empty">No saved chats</div>
             </div>
           </div>
           
           <!-- Main Chat Area -->
           <div class="chat-main">
             
-            <!-- Messages Area -->
+            <!-- Messages -->
             <div class="chat-messages-area" id="chatMessagesArea">
-              <!-- Welcome state -->
               <div class="chat-welcome">
                 <div class="chat-welcome-icon">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                   </svg>
                 </div>
                 <h3>Chat with Your Research Library</h3>
-                <p>Ask questions about your documents. You can search across all documents or select specific collections to focus your queries.</p>
+                <p>Ask questions about your documents. Select specific collections to focus your search.</p>
               </div>
             </div>
             
             <!-- Input Area -->
             <div class="chat-input-area">
               
-              <!-- Collection Indicator Bar -->
+              <!-- Collection Bar -->
               <div class="chat-collection-bar" id="chatCollectionBar">
                 <span class="collection-indicator-label">Searching:</span>
-                <span class="collection-tag all-docs">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                  </svg>
-                  All Documents
-                </span>
+                <span class="collection-tag all-docs">All Documents</span>
                 <button class="collection-selector-btn" id="collectionSelectorBtn" title="Select collections">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                 </button>
               </div>
               
-              <!-- Collection Selector Popup -->
+              <!-- Collection Popup -->
               <div class="collection-selector-popup" id="collectionSelectorPopup">
                 <div class="collection-selector-header">
                   <span class="collection-selector-title">Include Collections</span>
-                  <button class="collection-selector-close" id="closeCollectionPopup">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
+                  <button class="collection-selector-close" id="closeCollectionPopup">×</button>
                 </div>
-                <div class="collection-selector-list" id="collectionSelectorList">
-                  <!-- Populated by JS -->
-                </div>
+                <div class="collection-selector-list" id="collectionSelectorList"></div>
               </div>
               
-              <!-- Input Row -->
+              <!-- Input -->
               <div class="chat-input-row">
                 <div class="chat-input-wrapper">
-                  <textarea 
-                    id="libraryChatInput" 
-                    class="chat-input" 
-                    placeholder="Ask a question about your documents..."
-                    rows="1"
-                  ></textarea>
-                  <button class="chat-send-button" id="libraryChatSend" title="Send message">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <textarea id="libraryChatInput" class="chat-input" placeholder="Ask a question about your documents..." rows="1"></textarea>
+                  <button class="chat-send-button" id="libraryChatSend" title="Send">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                     </svg>
                   </button>
@@ -274,7 +797,6 @@
           </div>
           
         </div>
-        <!-- END: Library Chat View -->
 
       </div>
     </aside>
@@ -283,7 +805,6 @@
     <main class="right">
       <div class="panel-head">
         <span class="panel-header">Create</span>
-        <!-- View Toggle -->
         <div class="view-toggle">
           <button class="view-toggle-btn active" id="viewResearch" data-tooltip="Generate new research documents with custom frameworks">Research</button>
           <button class="view-toggle-btn" id="viewWhiteLabel" data-tooltip="Synthesize multiple documents into a single white-label report">Synthesis</button>
@@ -293,7 +814,6 @@
       
       <!-- Research Form -->
       <div class="console" id="researchForm">
-        <!-- Research Topic -->
         <div class="section">
           <h3>Research Topic</h3>
           <div class="row">
@@ -334,14 +854,12 @@
           </div>
         </div>
         
-        <!-- Context -->
         <div class="section">
           <h3>Additional Context</h3>
           <textarea id="contextInput" placeholder="Select a Focus above to begin..." rows="1" maxlength="1000"></textarea>
           <div style="font-size:11px;color:#6c7a89;text-align:right;margin-top:4px"><span id="charCount">0</span> / 1000</div>
         </div>
         
-        <!-- Research Modifiers -->
         <div class="section ctx-compact">
           <h3>Research Modifiers</h3>
           <div class="ctx-grid">
@@ -385,16 +903,14 @@
         </div>
       </div>
       
-      <!-- White Label Form (Hidden by default) -->
+      <!-- White Label Form -->
       <div class="console" id="whiteLabelForm" style="display: none;">
         <div class="section">
           <h3>Select Documents <span id="documentCount" style="color:var(--muted);font-weight:normal">(0/5)</span></h3>
           <div class="searchBox" style="padding:0 0 8px 0">
             <input id="documentSearch" placeholder="Search documents to include…"/>
           </div>
-          <div id="documentSelector" class="document-selector">
-            <!-- Documents populated by JS -->
-          </div>
+          <div id="documentSelector" class="document-selector"></div>
         </div>
         
         <div class="section">
@@ -419,7 +935,7 @@
     </main>
   </section>
 
-  <!-- Generation Progress Toast -->
+  <!-- Toast -->
   <div id="generationToast" class="toast-notification" style="display: none;">
     <div class="toast-header">
       <div class="toast-icon">
@@ -464,10 +980,8 @@
     </div>
     
     <div class="viewer-container">
-      <!-- Document Content -->
       <div id="viewerFrame" class="viewer-content"></div>
       
-      <!-- Chat Panel -->
       <div id="chatPanel" class="chat-panel">
         <div class="chat-document-title" id="chatDocTitle">Document Name</div>
         <div class="chat-panel-header">
@@ -543,7 +1057,7 @@
     </div>
   </dialog>
 
-  <!-- Application Scripts -->
+  <!-- Scripts -->
   <script src="js/config.js"></script>
   <script src="js/vertesia-api.js"></script>
   <script src="js/markdown-viewer.js"></script>
@@ -551,18 +1065,11 @@
   <script src="js/collections.js"></script>
   <script src="js/app.js"></script>
   <script src="js/tooltip.js"></script>
-
-  <!-- Portfolio Pulse Scripts -->
   <script src="js/pulse-config.js"></script>
   <script src="js/pulse-widget.js"></script>
-  
-  <!-- NEW: Library Chat Script -->
   <script src="js/library-chat.js"></script>
-  
-  <!-- UPDATED: Pulse Integration with Chat support -->
   <script src="js/pulse-integration.js"></script>
 
-  <!-- Bottom left utilities -->
   <button id="downloadHistory" class="history-download-btn" title="Download research history">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
@@ -570,7 +1077,6 @@
     Screen History
   </button>
   
-  <!-- Bottom right build -->
   <div class="version-badge">Scout Build v3.3.0 "Chat" - Last Updated: 12.17.2025</div>
 </body>
 </html>
