@@ -77,6 +77,17 @@ class VertesiaAPI {
     return await this.call(`/jobs/${jobId}`);
   }
 
+  // Get workflow run status (for polling research generation)
+  async getRunStatus(workflowId, runId) {
+    try {
+      const response = await this.call(`/workflows/runs/${workflowId}/${runId}`);
+      return response;
+    } catch (error) {
+      console.error('Failed to get run status:', error);
+      return null;
+    }
+  }
+
   // Get download URL for file
   async getDownloadUrl(fileSource) {
     return await this.call('/objects/download-url', {
