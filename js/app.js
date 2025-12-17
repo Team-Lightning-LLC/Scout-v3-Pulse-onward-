@@ -544,9 +544,7 @@ filterAndRenderDocuments() {
   // Helper: Get collections a document belongs to
   getDocumentCollections(docId) {
     if (!this.collectionsManager) return [];
-    return this.collectionsManager.collections.filter(c => 
-      c.document_ids.includes(docId)
-    );
+    return this.collectionsManager.getDocumentCollections(docId);
   }
 
   // View document
