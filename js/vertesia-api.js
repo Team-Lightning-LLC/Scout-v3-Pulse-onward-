@@ -126,6 +126,7 @@ class VertesiaAPI {
   }
 
   // Chat with document - Conversation type (agent with state)
+  // FIX: Added interactive: true and max_iterations per Vertesia API requirements
   async chatWithDocument(data) {
     console.log('Starting document chat with:', data);
     
@@ -144,15 +145,18 @@ class VertesiaAPI {
     const response = await this.call('/execute/async', {
       method: 'POST',
       body: JSON.stringify({
-        type: 'conversation',  // Agent with conversation state
+        type: 'conversation',
         interaction: 'DocumentChat',
         data: {
-          task: task  // DocumentChat expects 'task' property
+          task: task
         },
         config: {
           environment: CONFIG.ENVIRONMENT_ID,
           model: CONFIG.MODEL
-        }
+        },
+        // FIX: These are required for proper agent execution
+        interactive: true,
+        max_iterations: 100
       })
     });
     
@@ -161,6 +165,27 @@ class VertesiaAPI {
     console.log('workflowId:', response.workflowId);
     
     return response;
+  }
+
+  // Extract clean answer from structured agent response
+  // Agent returns: **1. User Query:** ... **2. Resources Search:** ... **3. Agent Answer:** [content]
+  extractAnswer(fullMessage) {
+    if (!fullMessage) return '';
+    
+    // Try to extract just the "Agent Answer" section
+    const match = fullMessage.match(/\*\*3\.\s*Agent Answer:\*\*\s*([\s\S]*?)(?=\*\*\d+\.|$)/i);
+    if (match) {
+      return match[1].trim();
+    }
+    
+    // Fallback: try alternative formats
+    const altMatch = fullMessage.match(/Agent Answer[:\s]*([\s\S]*?)(?=User Query|Resources Search|$)/i);
+    if (altMatch) {
+      return altMatch[1].trim();
+    }
+    
+    // If no structured format found, return the full message
+    return fullMessage;
   }
 
   // Stream messages from workflow with abort support
@@ -172,7 +197,7 @@ class VertesiaAPI {
       console.log('Opening stream:', url);
       
       const response = await fetch(url, {
-        signal: abortSignal  // Support for abort controller
+        signal: abortSignal
       });
       
       if (!response.ok) {
@@ -194,24 +219,21 @@ class VertesiaAPI {
         
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // Keep incomplete line in buffer
+        buffer = lines.pop();
         
         for (const line of lines) {
           if (line.trim() === '') continue;
           
-          // Server-Sent Events format: lines start with "data:", "event:", "id:", etc.
           if (line.startsWith('data:')) {
             try {
-              // Strip "data:" prefix and parse JSON
               const jsonStr = line.substring(5).trim();
               const data = JSON.parse(jsonStr);
               
               console.log('Stream message:', data);
               
-              // Pass message to handler
               if (onMessage) onMessage(data);
               
-              // Check for stream end signals (but NOT type: "complete" - that contains the answer!)
+              // Check for stream end signals
               if (data.type === 'finish' || 
                   data.message === 'stream_end' ||
                   data.finish_reason === 'stop') {
@@ -224,12 +246,10 @@ class VertesiaAPI {
               console.warn('Failed to parse SSE data line:', line, e);
             }
           }
-          // Ignore other SSE fields (event:, id:, retry:, etc.)
         }
       }
       
     } catch (error) {
-      // AbortError is expected when user closes viewer
       if (error.name === 'AbortError') {
         console.log('Stream aborted intentionally');
         return;
