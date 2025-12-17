@@ -191,7 +191,7 @@ Hyperlink the sources. You Must use hyperlinks for the sources of this singular 
       prompt += `
 Utilize Web Search to develop a singular document utilizing the following structure as the guide to provide users with a valuable research document: 
 Analysis Type: ${data.capability}
-Framework: ${data.framework}
+Framework: ${data.framework} (access the relevant framework from the content objects space where document is titled "X: Framework and Methodology")
 
 Utilize this context to gain additional insight into your research topic:
 ${data.context}
