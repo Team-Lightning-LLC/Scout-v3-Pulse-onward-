@@ -1,4 +1,4 @@
-// Library Chat Manager - FIXED VERSION
+// Library Chat Manager - FIXED v2
 // Chat with entire document library or specific collections
 
 class LibraryChatManager {
@@ -19,10 +19,10 @@ class LibraryChatManager {
 
   init() {
     this.loadChatHistory();
-    this.renderChatHistory();
+    this.bindEvents();
+    this.renderSavedChats();
     this.renderWelcome();
     this.renderCollectionBar();
-    this.bindEvents();
     console.log('Library Chat Manager initialized');
   }
 
@@ -35,9 +35,11 @@ class LibraryChatManager {
     document.getElementById('saveChatBtn')?.addEventListener('click', () => this.saveCurrentChat());
 
     // Send message
-    document.getElementById('libraryChatSend')?.addEventListener('click', () => this.sendMessage());
-    
+    const sendBtn = document.getElementById('libraryChatSend');
     const input = document.getElementById('libraryChatInput');
+    
+    sendBtn?.addEventListener('click', () => this.sendMessage());
+    
     input?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -48,13 +50,33 @@ class LibraryChatManager {
     // Auto-resize textarea
     input?.addEventListener('input', () => {
       input.style.height = 'auto';
-      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+      input.style.height = Math.min(input.scrollHeight, 100) + 'px';
     });
 
+    // Collection selector
+    this.bindCollectionSelector();
+
+    // Chat history clicks
+    document.getElementById('chatHistoryList')?.addEventListener('click', (e) => {
+      const item = e.target.closest('.chat-history-item');
+      const deleteBtn = e.target.closest('.chat-history-delete');
+      
+      if (deleteBtn && item) {
+        e.stopPropagation();
+        this.deleteChat(item.dataset.chatId);
+      } else if (item) {
+        this.loadChat(item.dataset.chatId);
+      }
+    });
+  }
+
+  bindCollectionSelector() {
     // Collection selector button
-    document.getElementById('collectionSelectorBtn')?.addEventListener('click', (e) => {
+    const btn = document.getElementById('collectionSelectorBtn');
+    const popup = document.getElementById('collectionSelectorPopup');
+    
+    btn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      const popup = document.getElementById('collectionSelectorPopup');
       popup?.classList.toggle('open');
       if (popup?.classList.contains('open')) {
         this.renderCollectionOptions();
@@ -63,7 +85,6 @@ class LibraryChatManager {
 
     // Close popup on outside click
     document.addEventListener('click', (e) => {
-      const popup = document.getElementById('collectionSelectorPopup');
       if (popup?.classList.contains('open') && 
           !e.target.closest('#collectionSelectorPopup') && 
           !e.target.closest('#collectionSelectorBtn')) {
@@ -71,22 +92,9 @@ class LibraryChatManager {
       }
     });
 
-    // Close popup button
+    // Close button
     document.getElementById('closeCollectionPopup')?.addEventListener('click', () => {
-      document.getElementById('collectionSelectorPopup')?.classList.remove('open');
-    });
-
-    // Chat history clicks
-    document.getElementById('chatHistoryList')?.addEventListener('click', (e) => {
-      const item = e.target.closest('.chat-history-item');
-      const starBtn = e.target.closest('.chat-history-star');
-      
-      if (starBtn && item) {
-        e.stopPropagation();
-        this.toggleStarChat(item.dataset.chatId);
-      } else if (item) {
-        this.loadChat(item.dataset.chatId);
-      }
+      popup?.classList.remove('open');
     });
 
     // Collection option clicks
@@ -109,22 +117,12 @@ class LibraryChatManager {
       this.renderCollectionOptions();
       this.renderCollectionBar();
     });
-
-    // Remove collection tag
-    document.getElementById('chatCollectionBar')?.addEventListener('click', (e) => {
-      const removeBtn = e.target.closest('.collection-tag-remove');
-      if (removeBtn) {
-        const collectionId = removeBtn.dataset.collectionId;
-        this.selectedCollections.delete(collectionId);
-        this.renderCollectionOptions();
-        this.renderCollectionBar();
-      }
-    });
   }
 
   // ===== CHAT OPERATIONS =====
   startNewChat() {
-    if (this.messages.length > 0 && !this.currentChatId) {
+    // Auto-save current chat if it has messages
+    if (this.messages.length > 0) {
       this.saveCurrentChat();
     }
 
@@ -134,8 +132,8 @@ class LibraryChatManager {
 
     this.renderWelcome();
     this.renderCollectionBar();
-    this.renderChatHistory();
-
+    this.renderSavedChats();
+    this.enableInput();
     document.getElementById('libraryChatInput')?.focus();
   }
 
@@ -145,45 +143,49 @@ class LibraryChatManager {
     
     if (!message || this.isStreaming) return;
 
+    // Clear and reset input
     input.value = '';
     input.style.height = 'auto';
 
     // Add user message
     this.addMessage('user', message);
 
-    // Show thinking indicator
+    // Show thinking
     this.showThinking();
-    this.setInputEnabled(false);
+    this.disableInput();
 
     try {
       const task = this.buildTaskPrompt(message);
-      console.log('Sending chat:', task);
+      console.log('Sending:', task);
 
       const response = await this.executeChat(task);
       
       if (response.runId && response.workflowId) {
         await this.streamResponse(response.workflowId, response.runId);
       } else {
-        throw new Error('Invalid response');
+        throw new Error('Invalid API response');
       }
 
     } catch (error) {
       console.error('Chat error:', error);
       this.hideThinking();
-      this.addMessage('ai', 'Sorry, there was an error. Please try again.');
-    } finally {
-      this.setInputEnabled(true);
+      this.addMessage('ai', 'Sorry, there was an error processing your request. Please try again.');
     }
+    
+    // ALWAYS re-enable input
+    this.enableInput();
+    document.getElementById('libraryChatInput')?.focus();
   }
 
   buildTaskPrompt(question) {
     let task = '';
 
+    // Collection filtering
     if (this.selectedCollections.size > 0) {
       const collectionNames = Array.from(this.selectedCollections)
         .map(id => {
           const col = this.app.collectionsManager?.collections.find(c => c.id === id);
-          return col ? col.name : id;
+          return col ? col.name : null;
         })
         .filter(Boolean);
 
@@ -193,12 +195,12 @@ class LibraryChatManager {
       task += `Search across ALL documents in the library.\n\n`;
     }
 
+    // Conversation history for context
     if (this.messages.length > 1) {
-      const historyStr = this.messages
-        .slice(-10)
-        .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-        .join('\n');
-      task += `Previous conversation:\n${historyStr}\n\n`;
+      const history = this.messages.slice(-10).map(m => 
+        `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+      ).join('\n');
+      task += `Previous conversation:\n${history}\n\n`;
     }
 
     task += `Current question: ${question}`;
@@ -214,7 +216,7 @@ class LibraryChatManager {
       },
       body: JSON.stringify({
         type: 'conversation',
-        interaction: 'document-chat',
+        interaction: 'DocumentChat',
         data: { task },
         config: {
           environment: CONFIG.ENVIRONMENT_ID,
@@ -242,7 +244,7 @@ class LibraryChatManager {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let hasReceivedAnswer = false;
+      let gotAnswer = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -258,31 +260,29 @@ class LibraryChatManager {
           try {
             const data = JSON.parse(line.slice(5).trim());
 
-            if (data.type === 'answer' && data.message && !hasReceivedAnswer) {
-              const cleanAnswer = this.extractAnswer(data.message);
-              
-              if (cleanAnswer && cleanAnswer.trim().length > 10) {
-                hasReceivedAnswer = true;
+            if (data.type === 'answer' && data.message && !gotAnswer) {
+              const answer = this.extractAnswer(data.message);
+              if (answer && answer.length > 10) {
+                gotAnswer = true;
                 this.hideThinking();
-                this.addMessage('ai', cleanAnswer);
+                this.addMessage('ai', answer);
               }
             }
 
             if (data.type === 'finish' || data.finish_reason === 'stop') {
-              return;
+              break;
             }
           } catch (e) {}
         }
       }
 
-      if (!hasReceivedAnswer) {
+      if (!gotAnswer) {
         this.hideThinking();
         this.addMessage('ai', 'I processed your request but couldn\'t generate a response. Please try rephrasing.');
       }
 
     } catch (error) {
-      if (error.name === 'AbortError') return;
-      throw error;
+      if (error.name !== 'AbortError') throw error;
     } finally {
       this.isStreaming = false;
       this.streamAbortController = null;
@@ -291,94 +291,83 @@ class LibraryChatManager {
 
   extractAnswer(fullMessage) {
     if (!fullMessage) return '';
-
+    
+    // Try structured format first
     const match = fullMessage.match(/\*\*3\.\s*Agent Answer:\*\*\s*([\s\S]*?)(?=\*\*\d+\.|$)/i);
     if (match) return match[1].trim();
-
+    
     const altMatch = fullMessage.match(/Agent Answer[:\s]*([\s\S]*?)(?=User Query|Resources Search|$)/i);
     if (altMatch) return altMatch[1].trim();
-
+    
     return fullMessage;
   }
 
-  // ===== RENDERING =====
+  // ===== MESSAGE RENDERING =====
   addMessage(role, content) {
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-
-    this.messages.push({ role, content, timestamp, id: Date.now() });
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    this.messages.push({ role, content, time, id: Date.now() });
     this.renderMessages();
   }
 
   renderWelcome() {
-    const container = document.getElementById('chatMessagesArea');
-    if (!container) return;
+    const area = document.getElementById('chatMessagesArea');
+    if (!area) return;
 
-    container.innerHTML = `
+    area.innerHTML = `
       <div class="chat-welcome">
         <div class="chat-welcome-icon">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
         </div>
         <h3>Chat with Your Research Library</h3>
-        <p>Ask questions about your documents. Select collections below to focus your search.</p>
+        <p>Ask questions about your documents. Select specific collections to focus your search.</p>
       </div>
     `;
   }
 
   renderMessages() {
-    const container = document.getElementById('chatMessagesArea');
-    if (!container) return;
+    const area = document.getElementById('chatMessagesArea');
+    if (!area) return;
 
     if (this.messages.length === 0) {
       this.renderWelcome();
       return;
     }
 
-    container.innerHTML = this.messages.map(msg => `
+    area.innerHTML = this.messages.map(msg => `
       <div class="chat-msg ${msg.role}">
         <div class="chat-msg-avatar">${msg.role === 'user' ? 'U' : 'AI'}</div>
         <div class="chat-msg-content">
-          <div class="chat-msg-bubble">${msg.role === 'ai' ? this.formatAIMessage(msg.content) : this.escapeHtml(msg.content)}</div>
-          <div class="chat-msg-time">${msg.timestamp}</div>
+          <div class="chat-msg-bubble">${msg.role === 'ai' ? this.formatMessage(msg.content) : this.escape(msg.content)}</div>
+          <div class="chat-msg-time">${msg.time}</div>
         </div>
       </div>
     `).join('');
     
-    container.scrollTop = container.scrollHeight;
+    area.scrollTop = area.scrollHeight;
   }
 
-  formatAIMessage(content) {
-    if (!content) return '';
-
-    let formatted = this.escapeHtml(content);
-    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    formatted = formatted.replace(/^[•\-]\s+(.+)$/gm, '<li>$1</li>');
-    formatted = formatted.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-
-    const paragraphs = formatted.split('\n\n').filter(p => p.trim());
-    formatted = paragraphs.map(p => {
-      if (p.startsWith('<ul>')) return p;
-      return `<p>${p.replace(/\n/g, '<br>')}</p>`;
-    }).join('');
-
-    return formatted;
+  formatMessage(text) {
+    if (!text) return '';
+    let html = this.escape(text);
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/^[•\-]\s+(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    return html.split('\n\n').map(p => p.startsWith('<ul>') ? p : `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
   }
 
-  escapeHtml(text) {
+  escape(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
   showThinking() {
-    const container = document.getElementById('chatMessagesArea');
-    if (!container) return;
+    const area = document.getElementById('chatMessagesArea');
+    if (!area) return;
 
-    container.insertAdjacentHTML('beforeend', `
+    area.insertAdjacentHTML('beforeend', `
       <div class="chat-msg ai thinking" id="thinkingIndicator">
         <div class="chat-msg-avatar">AI</div>
         <div class="chat-msg-content">
@@ -390,18 +379,28 @@ class LibraryChatManager {
         </div>
       </div>
     `);
-    container.scrollTop = container.scrollHeight;
+    area.scrollTop = area.scrollHeight;
   }
 
   hideThinking() {
     document.getElementById('thinkingIndicator')?.remove();
   }
 
-  setInputEnabled(enabled) {
+  enableInput() {
     const input = document.getElementById('libraryChatInput');
-    const sendBtn = document.getElementById('libraryChatSend');
-    if (input) input.disabled = !enabled;
-    if (sendBtn) sendBtn.disabled = !enabled;
+    const btn = document.getElementById('libraryChatSend');
+    if (input) {
+      input.disabled = false;
+      input.focus();
+    }
+    if (btn) btn.disabled = false;
+  }
+
+  disableInput() {
+    const input = document.getElementById('libraryChatInput');
+    const btn = document.getElementById('libraryChatSend');
+    if (input) input.disabled = true;
+    if (btn) btn.disabled = true;
   }
 
   // ===== COLLECTION SELECTOR =====
@@ -409,43 +408,45 @@ class LibraryChatManager {
     const bar = document.getElementById('chatCollectionBar');
     if (!bar) return;
 
+    let html = `<span class="collection-indicator-label">Searching:</span>`;
+
     if (this.selectedCollections.size === 0) {
-      bar.innerHTML = `
-        <span class="collection-indicator-label">Searching:</span>
-        <span class="collection-tag all-docs">All Documents</span>
-        <button class="collection-selector-btn" id="collectionSelectorBtn" title="Select collections">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-      `;
+      html += `<span class="collection-tag all-docs">All Documents</span>`;
     } else {
       const collections = this.app.collectionsManager?.collections || [];
-      const selectedNames = Array.from(this.selectedCollections).map(id => {
+      Array.from(this.selectedCollections).forEach(id => {
         const col = collections.find(c => c.id === id);
-        return col ? { id: col.id, name: col.name } : null;
-      }).filter(Boolean);
-
-      let html = `<span class="collection-indicator-label">Searching:</span>`;
-      html += selectedNames.map(col => `
-        <span class="collection-tag">
-          ${this.escapeHtml(col.name)}
-          <button class="collection-tag-remove" data-collection-id="${col.id}" title="Remove">×</button>
-        </span>
-      `).join('');
-      html += `
-        <button class="collection-selector-btn" id="collectionSelectorBtn" title="Add collections">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-      `;
-      bar.innerHTML = html;
+        if (col) {
+          html += `
+            <span class="collection-tag">
+              ${this.escape(col.name)}
+              <button class="collection-tag-remove" data-id="${id}">×</button>
+            </span>
+          `;
+        }
+      });
     }
 
-    // Rebind the button event
+    html += `
+      <button class="collection-selector-btn" id="collectionSelectorBtn" title="Select collections">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    `;
+
+    bar.innerHTML = html;
+
+    // Rebind events
+    bar.querySelectorAll('.collection-tag-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.selectedCollections.delete(btn.dataset.id);
+        this.renderCollectionBar();
+        this.renderCollectionOptions();
+      });
+    });
+
     document.getElementById('collectionSelectorBtn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const popup = document.getElementById('collectionSelectorPopup');
@@ -462,28 +463,25 @@ class LibraryChatManager {
 
     const collections = this.app.collectionsManager?.collections || [];
     const allSelected = this.selectedCollections.size === 0;
-    const totalDocs = this.app.documents?.length || 0;
 
     let html = `
-      <div class="collection-option all-docs-option ${allSelected ? 'selected' : ''}" data-collection-id="all">
+      <div class="collection-option ${allSelected ? 'selected' : ''}" data-collection-id="all">
         <input type="checkbox" ${allSelected ? 'checked' : ''} readonly>
         <span class="collection-option-name">All Documents</span>
-        <span class="collection-option-count">${totalDocs}</span>
       </div>
     `;
 
-    html += collections.map(col => {
+    collections.forEach(col => {
       const isSelected = this.selectedCollections.has(col.id);
       const count = this.app.collectionsManager?.getDocumentCount?.(col.id) || 0;
-      
-      return `
+      html += `
         <div class="collection-option ${isSelected ? 'selected' : ''}" data-collection-id="${col.id}">
           <input type="checkbox" ${isSelected ? 'checked' : ''} readonly>
-          <span class="collection-option-name">${this.escapeHtml(col.name)}</span>
+          <span class="collection-option-name">${this.escape(col.name)}</span>
           <span class="collection-option-count">${count}</span>
         </div>
       `;
-    }).join('');
+    });
 
     list.innerHTML = html;
   }
@@ -493,141 +491,119 @@ class LibraryChatManager {
     try {
       const saved = localStorage.getItem(this.STORAGE_KEY);
       this.chatHistory = saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error('Failed to load chat history:', error);
+    } catch (e) {
       this.chatHistory = [];
     }
   }
 
   saveChatHistory() {
     try {
-      const toSave = this.chatHistory.slice(0, this.MAX_HISTORY);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(toSave));
-    } catch (error) {
-      console.error('Failed to save chat history:', error);
-    }
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.chatHistory.slice(0, this.MAX_HISTORY)));
+    } catch (e) {}
   }
 
   saveCurrentChat() {
     if (this.messages.length === 0) return;
 
-    const firstUserMsg = this.messages.find(m => m.role === 'user');
-    const title = firstUserMsg 
-      ? firstUserMsg.content.slice(0, 40) + (firstUserMsg.content.length > 40 ? '...' : '')
-      : 'Untitled Chat';
+    const firstMsg = this.messages.find(m => m.role === 'user');
+    const title = firstMsg ? firstMsg.content.slice(0, 35) + (firstMsg.content.length > 35 ? '...' : '') : 'Untitled';
 
-    const chatData = {
+    const chat = {
       id: this.currentChatId || `chat_${Date.now()}`,
       title,
       messages: [...this.messages],
       collections: Array.from(this.selectedCollections),
-      starred: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      savedAt: new Date().toISOString()
     };
 
-    const existingIndex = this.chatHistory.findIndex(c => c.id === chatData.id);
-    if (existingIndex >= 0) {
-      chatData.starred = this.chatHistory[existingIndex].starred;
-      this.chatHistory[existingIndex] = chatData;
+    const idx = this.chatHistory.findIndex(c => c.id === chat.id);
+    if (idx >= 0) {
+      this.chatHistory[idx] = chat;
     } else {
-      this.chatHistory.unshift(chatData);
+      this.chatHistory.unshift(chat);
     }
 
-    this.currentChatId = chatData.id;
+    this.currentChatId = chat.id;
     this.saveChatHistory();
-    this.renderChatHistory();
+    this.renderSavedChats();
   }
 
   loadChat(chatId) {
     const chat = this.chatHistory.find(c => c.id === chatId);
     if (!chat) return;
 
+    // Save current first
     if (this.messages.length > 0 && this.currentChatId !== chatId) {
       this.saveCurrentChat();
     }
 
+    // Load selected chat
     this.currentChatId = chat.id;
     this.messages = [...chat.messages];
     this.selectedCollections = new Set(chat.collections || []);
 
     this.renderMessages();
     this.renderCollectionBar();
-    this.renderChatHistory();
+    this.renderSavedChats();
+    this.enableInput();
   }
 
-  toggleStarChat(chatId) {
-    const chat = this.chatHistory.find(c => c.id === chatId);
-    if (!chat) return;
-
-    chat.starred = !chat.starred;
+  deleteChat(chatId) {
+    this.chatHistory = this.chatHistory.filter(c => c.id !== chatId);
     this.saveChatHistory();
-    this.renderChatHistory();
+    
+    if (this.currentChatId === chatId) {
+      this.startNewChat();
+    } else {
+      this.renderSavedChats();
+    }
   }
 
-  renderChatHistory() {
+  renderSavedChats() {
     const list = document.getElementById('chatHistoryList');
     if (!list) return;
 
-    const starred = this.chatHistory.filter(c => c.starred);
-    const recent = this.chatHistory.filter(c => !c.starred).slice(0, 10);
-
-    let html = '';
-
-    if (starred.length > 0) {
-      html += `<div class="chat-history-section-title">Starred</div>`;
-      html += starred.map(chat => this.getChatHistoryItemHTML(chat)).join('');
-    }
-
-    if (recent.length > 0) {
-      if (starred.length > 0) {
-        html += `<div class="chat-history-section-title" style="margin-top: 12px;">Recent</div>`;
-      }
-      html += recent.map(chat => this.getChatHistoryItemHTML(chat)).join('');
-    }
-
     if (this.chatHistory.length === 0) {
-      html = `<div class="chat-history-empty">No chat history yet</div>`;
+      list.innerHTML = `<div class="chat-history-empty">No saved chats</div>`;
+      return;
     }
 
-    list.innerHTML = html;
+    list.innerHTML = this.chatHistory.map(chat => {
+      const isActive = chat.id === this.currentChatId;
+      const date = new Date(chat.savedAt);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+      return `
+        <div class="chat-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
+          <div class="chat-history-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="chat-history-info">
+            <div class="chat-history-name">${this.escape(chat.title)}</div>
+            <div class="chat-history-meta">${dateStr}</div>
+          </div>
+          <button class="chat-history-delete" title="Delete">×</button>
+        </div>
+      `;
+    }).join('');
   }
 
-  getChatHistoryItemHTML(chat) {
-    const isActive = chat.id === this.currentChatId;
-    const date = new Date(chat.updatedAt || chat.createdAt);
-    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-    return `
-      <div class="chat-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
-        <div class="chat-history-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </div>
-        <div class="chat-history-info">
-          <div class="chat-history-name">${this.escapeHtml(chat.title)}</div>
-          <div class="chat-history-meta">${dateStr}</div>
-        </div>
-        <div class="chat-history-star ${chat.starred ? 'starred' : ''}" title="${chat.starred ? 'Unstar' : 'Star'}">★</div>
-      </div>
-    `;
-  }
-
-  // ===== VIEW ACTIVATION =====
+  // ===== LIFECYCLE =====
   activate() {
-    this.renderWelcome();
-    this.renderCollectionBar();
-    this.renderChatHistory();
     if (this.messages.length > 0) {
       this.renderMessages();
+    } else {
+      this.renderWelcome();
     }
+    this.renderCollectionBar();
+    this.renderSavedChats();
+    this.enableInput();
   }
 
   deactivate() {
-    if (this.streamAbortController) {
-      this.streamAbortController.abort();
-    }
+    this.streamAbortController?.abort();
   }
 }
 
