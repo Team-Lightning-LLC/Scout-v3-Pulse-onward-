@@ -7,6 +7,7 @@ class MarkdownViewer {
     this.chatOpen = false;
     this.chatMessages = [];
     this.streamAbortController = null;
+    this.hasReceivedAnswer = false;  // FIX: Initialize flag
     this.setupEventListeners();
   }
 
@@ -445,14 +446,20 @@ class MarkdownViewer {
         console.log('Stream message received:', data);
         
 if (data.type === 'answer' && data.message && !this.hasReceivedAnswer) {
-  this.hasReceivedAnswer = true;  // Flag to ignore subsequent answers
-  this.removeThinkingMessage();
-  
-  // FIX: Extract clean answer from structured agent response
+  // Extract clean answer from structured agent response
   const cleanAnswer = vertesiaAPI.extractAnswer(data.message);
-  this.addMessage('assistant', cleanAnswer);
   
-  this.reEnableInput();
+  // FIX: Only accept and set flag if we have meaningful content
+  // This prevents empty/partial answers from blocking the real answer
+  if (cleanAnswer && cleanAnswer.trim().length > 10) {
+    this.hasReceivedAnswer = true;
+    this.removeThinkingMessage();
+    this.addMessage('assistant', cleanAnswer);
+    this.reEnableInput();
+    console.log('Accepted answer:', cleanAnswer.substring(0, 80) + '...');
+  } else {
+    console.log('Skipping empty/short answer, waiting for real content:', data.message.substring(0, 50));
+  }
 }
       },
       
