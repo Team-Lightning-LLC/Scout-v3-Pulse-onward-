@@ -4,7 +4,7 @@ const CONFIG = {
   VERTESIA_API_BASE: 'https://api.vertesia.io/api/v1',
   VERTESIA_API_KEY: 'sk-2538a58567e4ebb6654c0a17ceab228c',
   ENVIRONMENT_ID: '681915c6a01fb262a410c161',
-  MODEL: 'publishers/anthropic/models/claude-opus-4-5',
+  MODEL: 'publishers/anthropic/models/claude-sonnet-4',
   
   // Research Agent Configuration
   INTERACTION_NAME: 'ResearchV2',
