@@ -23,6 +23,18 @@ class LibraryChatManager {
     this.renderSavedChats();
     this.renderWelcome();
     this.renderCollectionBar();
+    
+    // Update section title
+    const recentSection = document.getElementById('recentChatsSection');
+    if (recentSection) {
+      const title = recentSection.querySelector('.chat-history-title');
+      if (title) title.textContent = 'Saved Chats';
+    }
+    
+    // Hide starred section (not using it)
+    const starredSection = document.getElementById('starredChatsSection');
+    if (starredSection) starredSection.style.display = 'none';
+    
     console.log('Library Chat Manager initialized');
   }
 
@@ -53,10 +65,14 @@ class LibraryChatManager {
     document.getElementById('chatHistoryList')?.addEventListener('click', (e) => {
       const item = e.target.closest('.chat-history-item');
       const deleteBtn = e.target.closest('.chat-history-delete');
+      const renameBtn = e.target.closest('.chat-history-rename');
       
       if (deleteBtn && item) {
         e.stopPropagation();
         this.deleteChat(item.dataset.chatId);
+      } else if (renameBtn && item) {
+        e.stopPropagation();
+        this.renameChat(item.dataset.chatId);
       } else if (item) {
         this.loadChat(item.dataset.chatId);
       }
@@ -184,10 +200,10 @@ class LibraryChatManager {
         })
         .filter(Boolean);
 
-      task += `For this conversation, you may only search documents from the selected collections and do not include information or context from collections not included in this list or that are part of the larger object space. The selected collection for this question is: ${collectionNames.join(', ')}.\n`;
+      task += `IMPORTANT: Only search documents from these collections: ${collectionNames.join(', ')}.\n`;
       task += `Collection IDs: ${Array.from(this.selectedCollections).join(', ')}\n\n`;
     } else {
-      task += `Search using all of the documents in the collection to ensure you are getting a well informed understanding of context. You can only use the designated collections to preform your search. \n\n`;
+      task += `Search across ALL documents in the library.\n\n`;
     }
 
     if (this.messages.length > 1) {
@@ -266,13 +282,13 @@ class LibraryChatManager {
                 this.hideThinking();
                 this.addMessage('ai', answer);
                 
-                // Enable send button after 3 seconds if stream hangs
+                // Enable send button after 5 seconds if stream hangs
                 setTimeout(() => {
                   if (this.isStreaming) {
                     console.log('Backup: enabling send after timeout');
                     this.enableInput();
                   }
-                }, 3000);
+                }, 5000);
               }
             }
 
@@ -527,12 +543,19 @@ class LibraryChatManager {
   saveCurrentChat() {
     if (this.messages.length === 0) return;
 
+    // Get default title from first user message
     const firstMsg = this.messages.find(m => m.role === 'user');
-    const title = firstMsg ? firstMsg.content.slice(0, 35) + (firstMsg.content.length > 35 ? '...' : '') : 'Untitled';
+    const defaultTitle = firstMsg ? firstMsg.content.slice(0, 35) + (firstMsg.content.length > 35 ? '...' : '') : 'Untitled';
+    
+    // Prompt user for name
+    const title = prompt('Name this chat:', defaultTitle);
+    if (title === null) return; // User cancelled
+    
+    const finalTitle = title.trim() || defaultTitle;
 
     const chat = {
       id: this.currentChatId || `chat_${Date.now()}`,
-      title,
+      title: finalTitle,
       messages: [...this.messages],
       collections: Array.from(this.selectedCollections),
       savedAt: new Date().toISOString()
@@ -546,6 +569,18 @@ class LibraryChatManager {
     }
 
     this.currentChatId = chat.id;
+    this.saveChatHistory();
+    this.renderSavedChats();
+  }
+
+  renameChat(chatId) {
+    const chat = this.chatHistory.find(c => c.id === chatId);
+    if (!chat) return;
+    
+    const newTitle = prompt('Rename chat:', chat.title);
+    if (newTitle === null) return; // User cancelled
+    
+    chat.title = newTitle.trim() || chat.title;
     this.saveChatHistory();
     this.renderSavedChats();
   }
@@ -605,6 +640,7 @@ class LibraryChatManager {
             <div class="chat-history-name">${this.escape(chat.title)}</div>
             <div class="chat-history-meta">${dateStr}</div>
           </div>
+          <button class="chat-history-rename" title="Rename">✎</button>
           <button class="chat-history-delete" title="Delete">×</button>
         </div>
       `;
