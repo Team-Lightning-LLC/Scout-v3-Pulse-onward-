@@ -118,7 +118,7 @@
 
 /* === WHITE LABEL SPECIFIC === */
 #whiteLabelForm .document-selector {
-  max-height: 150px;
+  max-height: 280px;
   overflow-y: auto;
 }
 
