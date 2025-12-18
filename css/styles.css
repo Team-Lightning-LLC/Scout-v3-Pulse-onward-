@@ -2201,7 +2201,6 @@ dialog::backdrop {
   font-style: italic;
 }
 /* ===== RIGHT PANEL COMPACT STYLES ===== */
-/* Add this to your styles.css or as a separate file */
 
 /* === TOP SECTION - Research Topic & Context (PRIMARY) === */
 .right .console .section:nth-child(1),
@@ -2225,10 +2224,11 @@ dialog::backdrop {
   min-height: auto;
 }
 
-/* Larger textarea for Additional Context */
+/* FIXED: Force textarea to single row */
 .right .console textarea {
-  height: 44px;
-  min-height: 44px;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
   padding: 10px 12px;
   font-size: 13px;
   resize: none;
@@ -2237,9 +2237,8 @@ dialog::backdrop {
 }
 
 .right .console textarea:focus {
-  height: auto;
-  min-height: 44px;
-  max-height: 100px;
+  max-height: 100px !important;
+  height: auto !important;
   overflow: auto;
 }
 
@@ -2249,40 +2248,46 @@ dialog::backdrop {
   font-size: 10px;
 }
 
-/* === MODIFIERS SECTION (SECONDARY - smaller) === */
+/* === MODIFIERS SECTION (SECONDARY - TINY) === */
 .right .console .section:nth-child(3) {
-  margin-bottom: 6px;
-  padding-bottom: 6px;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
 }
 
 .right .console .section:nth-child(3) h3 {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  margin-bottom: 6px;
-  color: #6c7a89;
+  margin-bottom: 4px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .right .ctx-grid {
-  gap: 4px;
+  gap: 2px;
 }
 
 .right .ctx-block {
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .right .ctx-label {
-  font-size: 8px;
-  margin-bottom: 2px;
+  font-size: 7px;
+  margin-bottom: 1px;
   color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .right .seg {
   gap: 0;
+  height: 22px;
 }
 
 .right .seg-option {
-  padding: 4px 6px;
-  font-size: 9px;
+  padding: 2px 6px;
+  font-size: 8px;
+  line-height: 1;
 }
 
 /* Compact generate button row */
@@ -2333,7 +2338,7 @@ dialog::backdrop {
 
 /* Polish the segmented buttons */
 .right .seg {
-  border-radius: 5px;
+  border-radius: 4px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
 }
