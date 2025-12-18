@@ -2313,7 +2313,7 @@ dialog::backdrop {
 .right .generate-row {
   margin-top: 8px;
   margin-bottom: 8px;
-  padding-top: 12px;
+  padding-top: 6px;
   padding-bottom: 8px;
   display: flex;
   justify-content: center;
@@ -2321,7 +2321,7 @@ dialog::backdrop {
 }
 
 .right .generate-row .btn {
-  padding: 12px 40px;
+  padding: 8px 40px;
   font-size: 13px;
   font-weight: 600;
   border-radius: 8px;
