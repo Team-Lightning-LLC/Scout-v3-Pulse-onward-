@@ -184,7 +184,7 @@ class LibraryChatManager {
         })
         .filter(Boolean);
 
-      task += `For this conversation, you may only search documents from the selected collections and do not include information or context from collections not included in this list or that are part of the larger object space.: ${collectionNames.join(', ')}.\n`;
+      task += `For this conversation, you may only search documents from the selected collections and do not include information or context from collections not included in this list or that are part of the larger object space. The selected collection for this question is: ${collectionNames.join(', ')}.\n`;
       task += `Collection IDs: ${Array.from(this.selectedCollections).join(', ')}\n\n`;
     } else {
       task += `Search using all of the documents in the collection to ensure you are getting a well informed understanding of context. You can only use the designated collections to preform your search. \n\n`;
