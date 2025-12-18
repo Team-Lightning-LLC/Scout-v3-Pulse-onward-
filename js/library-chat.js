@@ -64,18 +64,23 @@ class LibraryChatManager {
 
     document.getElementById('chatHistoryList')?.addEventListener('click', (e) => {
       const item = e.target.closest('.chat-history-item');
-      const deleteBtn = e.target.closest('.chat-history-delete');
-      const renameBtn = e.target.closest('.chat-history-rename');
+      if (!item) return;
       
-      if (deleteBtn && item) {
+      // Check if clicked directly on buttons
+      if (e.target.classList.contains('chat-history-delete')) {
         e.stopPropagation();
         this.deleteChat(item.dataset.chatId);
-      } else if (renameBtn && item) {
+        return;
+      }
+      
+      if (e.target.classList.contains('chat-history-rename')) {
         e.stopPropagation();
         this.renameChat(item.dataset.chatId);
-      } else if (item) {
-        this.loadChat(item.dataset.chatId);
+        return;
       }
+      
+      // Otherwise load the chat
+      this.loadChat(item.dataset.chatId);
     });
   }
 
@@ -127,13 +132,13 @@ class LibraryChatManager {
   // ===== CHAT OPERATIONS =====
   startNewChat() {
     if (this.messages.length > 0) {
-      this.saveCurrentChat();
+      this.autoSaveChat(); // Auto-save without prompting
     }
 
     this.currentChatId = null;
     this.messages = [];
     this.selectedCollections.clear();
-    this.isStreaming = false; // Reset streaming flag
+    this.isStreaming = false;
 
     this.renderWelcome();
     this.renderCollectionBar();
@@ -540,22 +545,16 @@ class LibraryChatManager {
     } catch (e) {}
   }
 
-  saveCurrentChat() {
+  // Auto-save without prompting (used when switching chats)
+  autoSaveChat() {
     if (this.messages.length === 0) return;
 
-    // Get default title from first user message
     const firstMsg = this.messages.find(m => m.role === 'user');
-    const defaultTitle = firstMsg ? firstMsg.content.slice(0, 35) + (firstMsg.content.length > 35 ? '...' : '') : 'Untitled';
-    
-    // Prompt user for name
-    const title = prompt('Name this chat:', defaultTitle);
-    if (title === null) return; // User cancelled
-    
-    const finalTitle = title.trim() || defaultTitle;
+    const title = firstMsg ? firstMsg.content.slice(0, 35) + (firstMsg.content.length > 35 ? '...' : '') : 'Untitled';
 
     const chat = {
       id: this.currentChatId || `chat_${Date.now()}`,
-      title: finalTitle,
+      title,
       messages: [...this.messages],
       collections: Array.from(this.selectedCollections),
       savedAt: new Date().toISOString()
@@ -563,6 +562,7 @@ class LibraryChatManager {
 
     const idx = this.chatHistory.findIndex(c => c.id === chat.id);
     if (idx >= 0) {
+      chat.title = this.chatHistory[idx].title; // Keep existing title
       this.chatHistory[idx] = chat;
     } else {
       this.chatHistory.unshift(chat);
@@ -573,16 +573,92 @@ class LibraryChatManager {
     this.renderSavedChats();
   }
 
+  // Manual save with naming UI (used when clicking Save button)
+  saveCurrentChat() {
+    if (this.messages.length === 0) return;
+
+    const firstMsg = this.messages.find(m => m.role === 'user');
+    const defaultTitle = firstMsg ? firstMsg.content.slice(0, 35) + (firstMsg.content.length > 35 ? '...' : '') : 'Untitled';
+    
+    // Check if already saved
+    const existing = this.currentChatId ? this.chatHistory.find(c => c.id === this.currentChatId) : null;
+    
+    this.showNamingModal(existing?.title || defaultTitle, (title) => {
+      const chat = {
+        id: this.currentChatId || `chat_${Date.now()}`,
+        title: title,
+        messages: [...this.messages],
+        collections: Array.from(this.selectedCollections),
+        savedAt: new Date().toISOString()
+      };
+
+      const idx = this.chatHistory.findIndex(c => c.id === chat.id);
+      if (idx >= 0) {
+        this.chatHistory[idx] = chat;
+      } else {
+        this.chatHistory.unshift(chat);
+      }
+
+      this.currentChatId = chat.id;
+      this.saveChatHistory();
+      this.renderSavedChats();
+    });
+  }
+
   renameChat(chatId) {
     const chat = this.chatHistory.find(c => c.id === chatId);
     if (!chat) return;
     
-    const newTitle = prompt('Rename chat:', chat.title);
-    if (newTitle === null) return; // User cancelled
+    this.showNamingModal(chat.title, (newTitle) => {
+      chat.title = newTitle;
+      this.saveChatHistory();
+      this.renderSavedChats();
+    });
+  }
+
+  showNamingModal(currentName, onSave) {
+    // Remove existing modal if any
+    document.getElementById('chatNamingModal')?.remove();
     
-    chat.title = newTitle.trim() || chat.title;
-    this.saveChatHistory();
-    this.renderSavedChats();
+    const modal = document.createElement('div');
+    modal.id = 'chatNamingModal';
+    modal.className = 'chat-naming-modal';
+    modal.innerHTML = `
+      <div class="chat-naming-content">
+        <input type="text" class="chat-naming-input" value="${this.escape(currentName)}" placeholder="Chat name..." maxlength="50" />
+        <div class="chat-naming-actions">
+          <button class="chat-naming-cancel">Cancel</button>
+          <button class="chat-naming-save">Save</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const input = modal.querySelector('.chat-naming-input');
+    const saveBtn = modal.querySelector('.chat-naming-save');
+    const cancelBtn = modal.querySelector('.chat-naming-cancel');
+    
+    input.focus();
+    input.select();
+    
+    const close = () => modal.remove();
+    
+    const save = () => {
+      const title = input.value.trim() || currentName;
+      onSave(title);
+      close();
+    };
+    
+    saveBtn.addEventListener('click', save);
+    cancelBtn.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) close();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') save();
+      if (e.key === 'Escape') close();
+    });
   }
 
   loadChat(chatId) {
@@ -590,13 +666,13 @@ class LibraryChatManager {
     if (!chat) return;
 
     if (this.messages.length > 0 && this.currentChatId !== chatId) {
-      this.saveCurrentChat();
+      this.autoSaveChat(); // Auto-save without prompting
     }
 
     this.currentChatId = chat.id;
     this.messages = [...chat.messages];
     this.selectedCollections = new Set(chat.collections || []);
-    this.isStreaming = false; // Reset streaming state
+    this.isStreaming = false;
 
     this.renderMessages();
     this.renderCollectionBar();
