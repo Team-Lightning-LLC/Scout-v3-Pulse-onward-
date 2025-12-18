@@ -266,13 +266,13 @@ class LibraryChatManager {
                 this.hideThinking();
                 this.addMessage('ai', answer);
                 
-                // Enable send button after 5 seconds if stream hangs
+                // Enable send button after 3 seconds if stream hangs
                 setTimeout(() => {
                   if (this.isStreaming) {
                     console.log('Backup: enabling send after timeout');
                     this.enableInput();
                   }
-                }, 5000);
+                }, 3000);
               }
             }
 
