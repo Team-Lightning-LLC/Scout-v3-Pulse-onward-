@@ -231,11 +231,11 @@ class LibraryChatManager {
       },
       body: JSON.stringify({
         type: 'conversation',
-        interaction: 'DocumentChat',
+        interaction: 'LibraryChat',
         data: { task },
         config: {
           environment: CONFIG.ENVIRONMENT_ID,
-          model: CONFIG.MODEL
+          model: publishers/anthropic/models/claude-sonnet-4
         },
         interactive: true,
         max_iterations: 100
