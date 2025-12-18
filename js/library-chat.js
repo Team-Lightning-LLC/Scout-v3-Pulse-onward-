@@ -265,6 +265,14 @@ class LibraryChatManager {
                 gotAnswer = true;
                 this.hideThinking();
                 this.addMessage('ai', answer);
+                
+                // Enable send button after 5 seconds if stream hangs
+                setTimeout(() => {
+                  if (this.isStreaming) {
+                    console.log('Backup: enabling send after timeout');
+                    this.enableInput();
+                  }
+                }, 5000);
               }
             }
 
@@ -394,30 +402,26 @@ class LibraryChatManager {
     document.getElementById('thinkingIndicator')?.remove();
   }
 
+  enableTyping() {
+    // Not needed anymore - textarea always enabled
+  }
+
   enableInput() {
-    const input = document.getElementById('libraryChatInput');
+    // Only enable the send button
     const btn = document.getElementById('libraryChatSend');
-    
-    if (input) {
-      input.disabled = false;
-      input.removeAttribute('disabled');
-    }
     if (btn) {
       btn.disabled = false;
       btn.removeAttribute('disabled');
     }
-    
-    console.log('Input enabled');
+    this.isStreaming = false;
+    console.log('Send button enabled');
   }
 
   disableInput() {
-    const input = document.getElementById('libraryChatInput');
+    // Only disable the send button - textarea stays enabled
     const btn = document.getElementById('libraryChatSend');
-    
-    if (input) input.disabled = true;
     if (btn) btn.disabled = true;
-    
-    console.log('Input disabled');
+    console.log('Send button disabled');
   }
 
   // ===== COLLECTION SELECTOR =====
