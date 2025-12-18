@@ -155,6 +155,25 @@
   margin-top: 1px;
 }
 
+.chat-history-rename {
+  background: none;
+  border: none;
+  color: #d1d5db;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+.chat-history-item:hover .chat-history-rename {
+  opacity: 1;
+}
+
+.chat-history-rename:hover {
+  color: #172A3A;
+}
+
 .chat-history-delete {
   background: none;
   border: none;
