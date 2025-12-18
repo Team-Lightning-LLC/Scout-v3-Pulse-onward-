@@ -1,5 +1,5 @@
-// Library Chat Manager - FIXED v2
-// Chat with entire document library or specific collections
+// Library Chat Manager - FIXED v3
+// Fixed: Input now properly re-enables after each message
 
 class LibraryChatManager {
   constructor(app) {
@@ -28,13 +28,9 @@ class LibraryChatManager {
 
   // ===== EVENT BINDING =====
   bindEvents() {
-    // New chat button
     document.getElementById('newChatBtn')?.addEventListener('click', () => this.startNewChat());
-
-    // Save chat button
     document.getElementById('saveChatBtn')?.addEventListener('click', () => this.saveCurrentChat());
 
-    // Send message
     const sendBtn = document.getElementById('libraryChatSend');
     const input = document.getElementById('libraryChatInput');
     
@@ -47,16 +43,13 @@ class LibraryChatManager {
       }
     });
 
-    // Auto-resize textarea
     input?.addEventListener('input', () => {
       input.style.height = 'auto';
       input.style.height = Math.min(input.scrollHeight, 100) + 'px';
     });
 
-    // Collection selector
     this.bindCollectionSelector();
 
-    // Chat history clicks
     document.getElementById('chatHistoryList')?.addEventListener('click', (e) => {
       const item = e.target.closest('.chat-history-item');
       const deleteBtn = e.target.closest('.chat-history-delete');
@@ -71,7 +64,6 @@ class LibraryChatManager {
   }
 
   bindCollectionSelector() {
-    // Collection selector button
     const btn = document.getElementById('collectionSelectorBtn');
     const popup = document.getElementById('collectionSelectorPopup');
     
@@ -83,7 +75,6 @@ class LibraryChatManager {
       }
     });
 
-    // Close popup on outside click
     document.addEventListener('click', (e) => {
       if (popup?.classList.contains('open') && 
           !e.target.closest('#collectionSelectorPopup') && 
@@ -92,12 +83,10 @@ class LibraryChatManager {
       }
     });
 
-    // Close button
     document.getElementById('closeCollectionPopup')?.addEventListener('click', () => {
       popup?.classList.remove('open');
     });
 
-    // Collection option clicks
     document.getElementById('collectionSelectorList')?.addEventListener('click', (e) => {
       const option = e.target.closest('.collection-option');
       if (!option) return;
@@ -121,7 +110,6 @@ class LibraryChatManager {
 
   // ===== CHAT OPERATIONS =====
   startNewChat() {
-    // Auto-save current chat if it has messages
     if (this.messages.length > 0) {
       this.saveCurrentChat();
     }
@@ -129,6 +117,7 @@ class LibraryChatManager {
     this.currentChatId = null;
     this.messages = [];
     this.selectedCollections.clear();
+    this.isStreaming = false; // Reset streaming flag
 
     this.renderWelcome();
     this.renderCollectionBar();
@@ -141,46 +130,52 @@ class LibraryChatManager {
     const input = document.getElementById('libraryChatInput');
     const message = input?.value?.trim();
     
-    if (!message || this.isStreaming) return;
+    // Don't proceed if no message or already streaming
+    if (!message || this.isStreaming) {
+      console.log('Blocked: no message or streaming', { message: !!message, isStreaming: this.isStreaming });
+      return;
+    }
 
-    // Clear and reset input
+    // Clear input immediately
     input.value = '';
     input.style.height = 'auto';
 
-    // Add user message
+    // Add user message to UI
     this.addMessage('user', message);
 
-    // Show thinking
+    // Set streaming state and disable input
+    this.isStreaming = true;
     this.showThinking();
     this.disableInput();
 
     try {
       const task = this.buildTaskPrompt(message);
-      console.log('Sending:', task);
+      console.log('Sending chat request...');
 
       const response = await this.executeChat(task);
       
       if (response.runId && response.workflowId) {
         await this.streamResponse(response.workflowId, response.runId);
       } else {
-        throw new Error('Invalid API response');
+        throw new Error('Invalid API response - missing runId or workflowId');
       }
 
     } catch (error) {
       console.error('Chat error:', error);
-      this.hideThinking();
       this.addMessage('ai', 'Sorry, there was an error processing your request. Please try again.');
+    } finally {
+      // CRITICAL: Always reset state in finally block
+      console.log('Resetting state...');
+      this.isStreaming = false;
+      this.hideThinking();
+      this.enableInput();
+      document.getElementById('libraryChatInput')?.focus();
     }
-    
-    // ALWAYS re-enable input
-    this.enableInput();
-    document.getElementById('libraryChatInput')?.focus();
   }
 
   buildTaskPrompt(question) {
     let task = '';
 
-    // Collection filtering
     if (this.selectedCollections.size > 0) {
       const collectionNames = Array.from(this.selectedCollections)
         .map(id => {
@@ -195,7 +190,6 @@ class LibraryChatManager {
       task += `Search across ALL documents in the library.\n\n`;
     }
 
-    // Conversation history for context
     if (this.messages.length > 1) {
       const history = this.messages.slice(-10).map(m => 
         `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
@@ -232,8 +226,13 @@ class LibraryChatManager {
   }
 
   async streamResponse(workflowId, runId) {
-    this.isStreaming = true;
     this.streamAbortController = new AbortController();
+    
+    // Add timeout to prevent hanging
+    const timeoutId = setTimeout(() => {
+      console.log('Stream timeout - aborting');
+      this.streamAbortController?.abort();
+    }, 120000); // 2 minute timeout
 
     const url = `${CONFIG.VERTESIA_API_BASE}/workflows/runs/${workflowId}/${runId}/stream?since=${Date.now()}&access_token=${CONFIG.VERTESIA_API_KEY}`;
 
@@ -270,9 +269,13 @@ class LibraryChatManager {
             }
 
             if (data.type === 'finish' || data.finish_reason === 'stop') {
-              break;
+              console.log('Stream finished');
+              clearTimeout(timeoutId);
+              return;
             }
-          } catch (e) {}
+          } catch (e) {
+            // Ignore JSON parse errors for incomplete chunks
+          }
         }
       }
 
@@ -282,9 +285,12 @@ class LibraryChatManager {
       }
 
     } catch (error) {
-      if (error.name !== 'AbortError') throw error;
+      if (error.name !== 'AbortError') {
+        console.error('Stream error:', error);
+        throw error;
+      }
     } finally {
-      this.isStreaming = false;
+      clearTimeout(timeoutId);
       this.streamAbortController = null;
     }
   }
@@ -292,7 +298,6 @@ class LibraryChatManager {
   extractAnswer(fullMessage) {
     if (!fullMessage) return '';
     
-    // Try structured format first
     const match = fullMessage.match(/\*\*3\.\s*Agent Answer:\*\*\s*([\s\S]*?)(?=\*\*\d+\.|$)/i);
     if (match) return match[1].trim();
     
@@ -367,6 +372,9 @@ class LibraryChatManager {
     const area = document.getElementById('chatMessagesArea');
     if (!area) return;
 
+    // Remove existing thinking indicator first
+    this.hideThinking();
+
     area.insertAdjacentHTML('beforeend', `
       <div class="chat-msg ai thinking" id="thinkingIndicator">
         <div class="chat-msg-avatar">AI</div>
@@ -389,18 +397,27 @@ class LibraryChatManager {
   enableInput() {
     const input = document.getElementById('libraryChatInput');
     const btn = document.getElementById('libraryChatSend');
+    
     if (input) {
       input.disabled = false;
-      input.focus();
+      input.removeAttribute('disabled');
     }
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('disabled');
+    }
+    
+    console.log('Input enabled');
   }
 
   disableInput() {
     const input = document.getElementById('libraryChatInput');
     const btn = document.getElementById('libraryChatSend');
+    
     if (input) input.disabled = true;
     if (btn) btn.disabled = true;
+    
+    console.log('Input disabled');
   }
 
   // ===== COLLECTION SELECTOR =====
@@ -437,7 +454,7 @@ class LibraryChatManager {
 
     bar.innerHTML = html;
 
-    // Rebind events
+    // Rebind remove buttons
     bar.querySelectorAll('.collection-tag-remove').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -447,6 +464,7 @@ class LibraryChatManager {
       });
     });
 
+    // Rebind selector button
     document.getElementById('collectionSelectorBtn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const popup = document.getElementById('collectionSelectorPopup');
@@ -532,15 +550,14 @@ class LibraryChatManager {
     const chat = this.chatHistory.find(c => c.id === chatId);
     if (!chat) return;
 
-    // Save current first
     if (this.messages.length > 0 && this.currentChatId !== chatId) {
       this.saveCurrentChat();
     }
 
-    // Load selected chat
     this.currentChatId = chat.id;
     this.messages = [...chat.messages];
     this.selectedCollections = new Set(chat.collections || []);
+    this.isStreaming = false; // Reset streaming state
 
     this.renderMessages();
     this.renderCollectionBar();
@@ -592,6 +609,7 @@ class LibraryChatManager {
 
   // ===== LIFECYCLE =====
   activate() {
+    this.isStreaming = false; // Reset on activation
     if (this.messages.length > 0) {
       this.renderMessages();
     } else {
@@ -604,6 +622,7 @@ class LibraryChatManager {
 
   deactivate() {
     this.streamAbortController?.abort();
+    this.isStreaming = false;
   }
 }
 
