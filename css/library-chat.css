@@ -677,7 +677,7 @@
   cursor: not-allowed;
 }
 
-/* FIXED: Button centered vertically */
+/* FIXED: Button centered vertically, no outline */
 .chat-send-button {
   position: absolute;
   right: 6px;
@@ -694,6 +694,13 @@
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
+  outline: none;
+  box-shadow: none;
+}
+
+.chat-send-button:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .chat-send-button:hover:not(:disabled) {
