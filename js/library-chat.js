@@ -232,7 +232,7 @@ class LibraryChatManager {
     const timeoutId = setTimeout(() => {
       console.log('Stream timeout - aborting');
       this.streamAbortController?.abort();
-    }, 120000); // 2 minute timeout
+    }, 100); // 1 second timeout
 
     const url = `${CONFIG.VERTESIA_API_BASE}/workflows/runs/${workflowId}/${runId}/stream?since=${Date.now()}&access_token=${CONFIG.VERTESIA_API_KEY}`;
 
