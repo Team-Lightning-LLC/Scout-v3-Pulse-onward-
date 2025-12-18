@@ -2309,39 +2309,26 @@ dialog::backdrop {
   letter-spacing: 0.3px;
 }
 
-.right .seg {
-  gap: 0;
-  height: 20px;
-}
-
-.right .seg-option {
-  padding: 2px 5px;
-  font-size: 8px;
-  line-height: 1;
-  color: #6c7a89;
-}
-
-.right .seg-option.is-active {
-  color: white;
-}
-
-/* Compact generate button row - FIXED */
+/* Generate button row - FULLY VISIBLE */
 .right .generate-row {
-  margin-top: 10px;
-  padding-top: 10px;
-  padding-bottom: 4px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding-top: 12px;
+  padding-bottom: 8px;
   display: flex;
   justify-content: center;
   border-top: 1px solid #f3f4f6;
 }
 
 .right .generate-row .btn {
-  padding: 10px 32px;
+  padding: 12px 40px;
   font-size: 13px;
   font-weight: 600;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(23, 42, 58, 0.15);
   transition: all 0.2s ease;
+  width: auto;
+  display: inline-block;
 }
 
 .right .generate-row .btn:hover:not(:disabled) {
@@ -2356,7 +2343,7 @@ dialog::backdrop {
 
 /* Reduce overall console padding */
 .right .console {
-  padding: 10px 14px;
+  padding: 10px 14px 16px 14px;
 }
 
 /* Tighter field groups */
@@ -2375,25 +2362,33 @@ dialog::backdrop {
 
 /* Polish the segmented buttons - subtle */
 .right .seg {
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  background: #fafbfc;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  border: 1px solid #e5e7eb !important;
+  background: #fafbfc !important;
+  height: 24px !important;
 }
 
 .right .seg-option {
-  border: none;
-  border-right: 1px solid #e5e7eb;
-  background: transparent;
+  border: none !important;
+  border-right: 1px solid #e5e7eb !important;
+  background: transparent !important;
+  padding: 4px 8px !important;
+  font-size: 9px !important;
+  min-height: auto !important;
+  height: 100% !important;
+  color: #6c7a89 !important;
+  white-space: nowrap !important;
 }
 
 .right .seg-option:last-child {
-  border-right: none;
+  border-right: none !important;
 }
 
 .right .seg-option.is-active {
-  box-shadow: none;
-  background: #172A3A;
+  box-shadow: none !important;
+  background: #172A3A !important;
+  color: white !important;
 }
 
 /* Polish the dropdowns */
