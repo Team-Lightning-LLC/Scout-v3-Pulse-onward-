@@ -2203,40 +2203,67 @@ dialog::backdrop {
 /* ===== RIGHT PANEL COMPACT STYLES ===== */
 /* Add this to your styles.css or as a separate file */
 
-/* Tighter section spacing */
-.right .console .section {
-  margin-bottom: 8px;
-  padding-bottom: 8px;
+/* === TOP SECTION - Research Topic & Context (PRIMARY) === */
+.right .console .section:nth-child(1),
+.right .console .section:nth-child(2) {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
 }
 
-.right .console .section h3 {
-  margin-bottom: 6px;
-  font-size: 12px;
+.right .console .section:nth-child(1) h3,
+.right .console .section:nth-child(2) h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #1f2d3d;
 }
 
-/* Smaller textarea */
-.right .console textarea {
-  min-height: 32px;
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
-/* Compact char count */
-.right .console .char-count {
-  margin-top: 1px;
-  font-size: 9px;
-}
-
-/* Tighter custom select */
+/* Larger dropdowns for Research Topic */
 .right .custom-select-trigger {
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
   min-height: auto;
 }
 
-/* Compact Research Modifiers */
+/* Larger textarea for Additional Context */
+.right .console textarea {
+  height: 44px;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 13px;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.right .console textarea:focus {
+  height: auto;
+  min-height: 44px;
+  max-height: 100px;
+  overflow: auto;
+}
+
+/* Char count */
+.right .console .char-count {
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+/* === MODIFIERS SECTION (SECONDARY - smaller) === */
+.right .console .section:nth-child(3) {
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+
+.right .console .section:nth-child(3) h3 {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #6c7a89;
+}
+
 .right .ctx-grid {
-  gap: 6px;
+  gap: 4px;
 }
 
 .right .ctx-block {
@@ -2244,8 +2271,9 @@ dialog::backdrop {
 }
 
 .right .ctx-label {
-  font-size: 9px;
-  margin-bottom: 3px;
+  font-size: 8px;
+  margin-bottom: 2px;
+  color: #9ca3af;
 }
 
 .right .seg {
@@ -2253,8 +2281,8 @@ dialog::backdrop {
 }
 
 .right .seg-option {
-  padding: 5px 8px;
-  font-size: 10px;
+  padding: 4px 6px;
+  font-size: 9px;
 }
 
 /* Compact generate button row */
@@ -2291,7 +2319,7 @@ dialog::backdrop {
 
 /* Tighter field groups */
 .right .field-group {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .right .field-group:last-child {
@@ -2303,14 +2331,9 @@ dialog::backdrop {
   padding: 8px 14px;
 }
 
-/* Section title - Research Modifiers */
-.right .section h3 {
-  margin-bottom: 4px;
-}
-
 /* Polish the segmented buttons */
 .right .seg {
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
 }
