@@ -235,7 +235,7 @@ class LibraryChatManager {
         data: { task },
         config: {
           environment: CONFIG.ENVIRONMENT_ID,
-          model: publishers/anthropic/models/claude-sonnet-4
+          model: publishers/anthropic/models/claude-opus-4-5
         },
         interactive: true,
         max_iterations: 100
