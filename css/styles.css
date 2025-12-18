@@ -2311,9 +2311,9 @@ dialog::backdrop {
 
 /* Generate button row - FULLY VISIBLE */
 .right .generate-row {
-  margin-top: 2px;
+  margin-top: 0px;
   margin-bottom: 8px;
-  padding-top: 2px;
+  padding-top: 0px;
   padding-bottom: 8px;
   display: flex;
   justify-content: center;
