@@ -34,7 +34,6 @@
       pointer-events: none;
     }
 
-    /* Slow-breathing gradient */
     .gradient-layer {
       position: absolute;
       top: 0;
@@ -53,7 +52,6 @@
       50% { opacity: 0.85; }
     }
 
-    /* Floating particles */
     .particles {
       position: absolute;
       top: 0;
@@ -114,7 +112,7 @@
       padding: 40px;
     }
 
-    /* Logo with subtle presence */
+    /* Logo */
     .logo-container {
       position: relative;
       margin-bottom: 24px;
@@ -152,7 +150,7 @@
     /* Brand */
     .brand {
       text-align: center;
-      margin-bottom: 64px;
+      margin-bottom: 56px;
     }
 
     .brand h1 {
@@ -176,16 +174,24 @@
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 24px;
     }
 
     .field {
       position: relative;
     }
 
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 8px;
+      font-weight: 400;
+    }
+
     .field input {
       width: 100%;
-      padding: 16px 0;
+      padding: 14px 0;
       font-size: 15px;
       color: #ffffff;
       background: transparent;
@@ -196,7 +202,7 @@
     }
 
     .field input::placeholder {
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(255, 255, 255, 0.25);
       font-weight: 400;
     }
 
@@ -204,7 +210,6 @@
       border-bottom-color: rgba(140, 180, 175, 0.5);
     }
 
-    /* Field glow on focus */
     .field::after {
       content: '';
       position: absolute;
@@ -221,60 +226,164 @@
       width: 100%;
     }
 
-    /* Button */
-    .enter-btn {
-      margin-top: 40px;
-      padding: 16px 32px;
+    /* Password field with toggle */
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper input {
+      padding-right: 40px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      color: rgba(255, 255, 255, 0.3);
+      transition: color 0.3s ease;
+    }
+
+    .password-toggle:hover {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .password-toggle svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    /* Remember me */
+    .remember-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .remember-row input[type="checkbox"] {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .remember-row input[type="checkbox"]:checked {
+      background: rgba(140, 180, 175, 0.4);
+      border-color: rgba(140, 180, 175, 0.6);
+    }
+
+    .remember-row input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid rgba(255, 255, 255, 0.9);
+      border-width: 0 1.5px 1.5px 0;
+      transform: rotate(45deg);
+    }
+
+    .remember-row label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      font-weight: 400;
+    }
+
+    /* Buttons */
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px 24px;
       font-size: 14px;
       font-weight: 500;
-      letter-spacing: 0.5px;
-      color: #172A3A;
-      background: rgba(255, 255, 255, 0.92);
-      border: none;
+      letter-spacing: 0.3px;
       border-radius: 6px;
       cursor: pointer;
       transition: all 0.4s ease;
-      position: relative;
-      overflow: hidden;
     }
 
-    .enter-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(140, 180, 175, 0.2) 0%, transparent 50%);
-      opacity: 0;
-      transition: opacity 0.4s ease;
+    .btn-primary {
+      color: #172A3A;
+      background: rgba(255, 255, 255, 0.92);
+      border: none;
     }
 
-    .enter-btn:hover {
+    .btn-primary:hover {
       background: #ffffff;
       transform: translateY(-1px);
       box-shadow: 0 8px 32px rgba(94, 154, 152, 0.15);
     }
 
-    .enter-btn:hover::before {
-      opacity: 1;
+    .btn-secondary {
+      color: rgba(255, 255, 255, 0.6);
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
-    .enter-btn:active {
+    .btn-secondary:hover {
+      color: rgba(255, 255, 255, 0.9);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn:active {
       transform: translateY(0);
     }
 
-    /* Forgot link */
-    .forgot {
-      margin-top: 32px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.3);
-      text-decoration: none;
-      transition: color 0.4s ease;
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 28px 0;
     }
 
-    .forgot:hover {
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .divider span {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.25);
+      text-transform: lowercase;
+    }
+
+    /* Create account */
+    .create-account {
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .create-account a {
       color: rgba(140, 180, 175, 0.7);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .create-account a:hover {
+      color: rgba(140, 180, 175, 1);
     }
   </style>
 </head>
@@ -286,7 +395,7 @@
   </div>
 
   <div class="login-container">
-    <!-- Logo with glow -->
+    <!-- Logo -->
     <div class="logo-container">
       <div class="logo-glow"></div>
       <img src="assets/logo.png" alt="" class="logo">
@@ -301,47 +410,66 @@
     <!-- Form -->
     <form class="login-form" onsubmit="handleLogin(event)">
       <div class="field">
+        <label>Email</label>
         <input 
           type="email" 
-          placeholder="Email" 
           autocomplete="email"
           required
         >
       </div>
+
       <div class="field">
-        <input 
-          type="password" 
-          placeholder="Password" 
-          autocomplete="current-password"
-          required
-        >
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input 
+            type="password" 
+            id="passwordInput"
+            autocomplete="current-password"
+            required
+          >
+          <button type="button" class="password-toggle" onclick="togglePassword()">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
       </div>
-      <button type="submit" class="enter-btn">Enter</button>
+
+      <div class="remember-row">
+        <input type="checkbox" id="remember">
+        <label for="remember">Keep me logged in</label>
+      </div>
+
+      <div class="button-row">
+        <button type="submit" class="btn btn-primary">Enter</button>
+        <button type="button" class="btn btn-secondary">Help</button>
+      </div>
     </form>
 
-    <a href="#" class="forgot">Forgot password?</a>
+    <div class="divider"><span>or</span></div>
+
+    <p class="create-account">
+      New here? <a href="#">Create an account</a>
+    </p>
   </div>
 
   <script>
-    // Gentle floating particles
+    // Particles
     function createParticles() {
       const container = document.getElementById('particles');
-      const count = 15; // Sparse, not overwhelming
+      const count = 15;
 
       for (let i = 0; i < count; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
-        
-        // Random positioning
         particle.style.left = Math.random() * 100 + '%';
         
-        // Varied sizes
         const size = 1 + Math.random() * 2;
         particle.style.width = size + 'px';
         particle.style.height = size + 'px';
         
-        // Staggered, slow animations
-        const duration = 20 + Math.random() * 30; // 20-50 seconds
+        const duration = 20 + Math.random() * 30;
         const delay = Math.random() * 20;
         particle.style.animationDuration = duration + 's';
         particle.style.animationDelay = delay + 's';
@@ -352,9 +480,31 @@
 
     createParticles();
 
+    // Password toggle
+    function togglePassword() {
+      const input = document.getElementById('passwordInput');
+      const icon = document.getElementById('eyeIcon');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = `
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+          <path d="M1 1l22 22"/>
+          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+        `;
+      } else {
+        input.type = 'password';
+        icon.innerHTML = `
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        `;
+      }
+    }
+
+    // Login
     function handleLogin(e) {
       e.preventDefault();
-      // Redirect to main app
       window.location.href = 'app.html';
     }
   </script>
