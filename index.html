@@ -32,6 +32,7 @@
       justify-content: center;
       color: #fff;
       -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
 
     /* Gradient background */
@@ -45,32 +46,40 @@
       pointer-events: none;
     }
 
-    /* Stars */
-    .stars {
+    /* Gentle floating particles */
+    .particles {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
       pointer-events: none;
+      overflow: hidden;
     }
 
-    .star {
+    .particle {
       position: absolute;
-      width: 1px;
-      height: 1px;
-      background: #fff;
+      background: rgba(255, 255, 255, 0.06);
       border-radius: 50%;
-      opacity: 0.15;
+      opacity: 0;
+      animation: float linear forwards;
     }
 
-    .star.twinkle {
-      animation: twinkle 4s ease-in-out infinite;
-    }
-
-    @keyframes twinkle {
-      0%, 100% { opacity: 0.15; }
-      50% { opacity: 0.4; }
+    @keyframes float {
+      0% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      70% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-70vh) translateX(15px);
+        opacity: 0;
+      }
     }
 
     /* Main container */
@@ -391,7 +400,7 @@
 <body>
   <!-- Background -->
   <div class="background"></div>
-  <div class="stars" id="stars"></div>
+  <div class="particles" id="particles"></div>
 
   <!-- Main -->
   <div class="main">
@@ -452,19 +461,41 @@
   </div>
 
   <script>
-    // Stars - some twinkle
-    const starsContainer = document.getElementById('stars');
-    for (let i = 0; i < 30; i++) {
-      const star = document.createElement('div');
-      star.className = 'star' + (Math.random() > 0.6 ? ' twinkle' : '');
-      star.style.left = Math.random() * 100 + '%';
-      star.style.top = Math.random() * 100 + '%';
-      if (star.classList.contains('twinkle')) {
-        star.style.animationDelay = Math.random() * 4 + 's';
-        star.style.animationDuration = (3 + Math.random() * 3) + 's';
-      }
-      starsContainer.appendChild(star);
+    // Gentle floating particles - spawn from bottom, fade before top
+    const particlesContainer = document.getElementById('particles');
+    
+    function createParticle() {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      
+      // Random size (small)
+      const size = 2 + Math.random() * 3;
+      particle.style.width = size + 'px';
+      particle.style.height = size + 'px';
+      
+      // Random horizontal position
+      particle.style.left = Math.random() * 100 + '%';
+      
+      // Start from bottom portion of screen
+      particle.style.bottom = -(Math.random() * 20) + '%';
+      
+      // Slow drift (25-45 seconds)
+      const duration = 25 + Math.random() * 20;
+      particle.style.animationDuration = duration + 's';
+      
+      particlesContainer.appendChild(particle);
+      
+      // Remove when animation ends
+      particle.addEventListener('animationend', () => particle.remove());
     }
+    
+    // Create initial particles staggered
+    for (let i = 0; i < 12; i++) {
+      setTimeout(createParticle, i * 800);
+    }
+    
+    // Add new particles periodically
+    setInterval(createParticle, 2500);
 
     // Password toggle
     function togglePass() {
