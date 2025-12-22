@@ -142,6 +142,65 @@
   opacity: 0.85;
 }
 
+/* === UTILITY BAR === */
+.utility-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.utility-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  color: #cfd8dc;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.utility-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.utility-btn svg {
+  flex-shrink: 0;
+}
+
+.utility-btn span {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.signed-in-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255,255,255,0.2);
+  color: #cfd8dc;
+  font-size: 11px;
+}
+
+.signed-in-status strong {
+  color: #fff;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #4ade80;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.5);
+}
+
 /* Char count smaller */
 .right .console div[style*="font-size:11px"] {
   font-size: 9px !important;
