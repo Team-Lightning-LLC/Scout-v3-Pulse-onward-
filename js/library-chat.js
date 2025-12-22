@@ -231,7 +231,7 @@ class LibraryChatManager {
       },
       body: JSON.stringify({
         type: 'conversation',
-        interaction: 'LibraryChat',
+        interaction: 'DocumentChat',
         data: { task },
         config: {
           environment: CONFIG.ENVIRONMENT_ID,
@@ -706,7 +706,7 @@ class LibraryChatManager {
       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
       return `
-        <div class="chat-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
+        <div class="chat-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}" title="${this.escape(chat.title)}">
           <div class="chat-history-icon">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
