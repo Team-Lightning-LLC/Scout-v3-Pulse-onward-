@@ -22,10 +22,13 @@ class CollectionsManager {
   // ===== API METHODS =====
 
   async apiCall(endpoint, options = {}) {
+    // Get JWT token from central API wrapper
+    const token = await vertesiaAPI.getToken();
+    
     const url = `${CONFIG.VERTESIA_API_BASE}${endpoint}`;
     const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${CONFIG.VERTESIA_API_KEY}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options.headers
       },
@@ -187,7 +190,7 @@ class CollectionsManager {
             <div class="collection-name">${c.name}</div>
             <div class="collection-count">${count}</div>
           </div>
-          <button class="btn-delete-collection" title="Delete">×</button>
+          <button class="btn-delete-collection" title="Delete">Ã—</button>
         </div>
       `;
     }).join('');
