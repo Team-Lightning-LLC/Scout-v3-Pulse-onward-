@@ -6,7 +6,7 @@ class DeepResearchApp {
     this.currentFilter = 'All';
     this.searchQuery = '';
     this.panelMode = 'research'; // 'research' or 'whitelabel'
-    this.selectedDocuments = []; // For white label document selection
+    this.selectedDocuments = []; // For report document selection
     
     this.init();
   }
@@ -19,11 +19,11 @@ class DeepResearchApp {
     // Initialize collections system
     this.collectionsManager = new CollectionsManager(this);
     
-    // Initialize white label search
+    // Initialize report search
     this.whiteLabelSearch = new WhiteLabelDocumentSearch(this);
     
     this.filterAndRenderDocuments();
-    this.populateDocumentSelector(); // For white label form
+    this.populateDocumentSelector(); // For report form
     console.log('Deep Research Agent initialized');
   }
 
@@ -105,17 +105,17 @@ class DeepResearchApp {
       });
     }
 
-    // White label form interactions
-    const whiteLabelJustification = document.getElementById('whiteLabelJustification');
-    const createWhiteLabelBtn = document.getElementById('createWhiteLabelBtn');
+    // Report form interactions
+    const reportFocus = document.getElementById('whiteLabelJustification');
+    const createReportBtn = document.getElementById('createWhiteLabelBtn');
 
-    whiteLabelJustification?.addEventListener('input', () => {
+    reportFocus?.addEventListener('input', () => {
       this.updateWhiteLabelCharCount();
       this.updateWhiteLabelButton();
     });
 
-    createWhiteLabelBtn?.addEventListener('click', () => {
-      this.startWhiteLabelGeneration();
+    createReportBtn?.addEventListener('click', () => {
+      this.startReportGeneration();
     });
 
     // Document selector (event delegation)
@@ -435,28 +435,27 @@ class DeepResearchApp {
   }
 
   // Filter and render documents
-// Filter and render documents
-filterAndRenderDocuments() {
-  this.filteredDocuments = this.documents.filter(doc => {
-    const matchesSearch = !this.searchQuery || 
-      [doc.title, doc.area, doc.topic].some(field => 
-        field && field.toLowerCase().includes(this.searchQuery)
-      );
+  filterAndRenderDocuments() {
+    this.filteredDocuments = this.documents.filter(doc => {
+      const matchesSearch = !this.searchQuery || 
+        [doc.title, doc.area, doc.topic].some(field => 
+          field && field.toLowerCase().includes(this.searchQuery)
+        );
+      
+      // Use collections manager to check if document should be shown
+      const matchesCollection = this.collectionsManager ? 
+        this.collectionsManager.shouldShowDocument(doc.id) : true;
+      
+      // Exclude Pulse documents (Digests and Watchlists)
+      const isDigest = doc.title && doc.title.toLowerCase().startsWith('digest:');
+      const isWatchlist = doc.title && doc.title.toLowerCase().startsWith('my watchlist:');
+      const isPulseDocument = isDigest || isWatchlist;
+      
+      return matchesSearch && matchesCollection && !isPulseDocument;
+    });
     
-    // Use collections manager to check if document should be shown
-    const matchesCollection = this.collectionsManager ? 
-      this.collectionsManager.shouldShowDocument(doc.id) : true;
-    
-    // Exclude Pulse documents (Digests and Watchlists)
-    const isDigest = doc.title && doc.title.toLowerCase().startsWith('digest:');
-    const isWatchlist = doc.title && doc.title.toLowerCase().startsWith('my watchlist:');
-    const isPulseDocument = isDigest || isWatchlist;
-    
-    return matchesSearch && matchesCollection && !isPulseDocument;
-  });
-  
-  this.renderDocuments();
-}
+    this.renderDocuments();
+  }
 
   // Render document list
   renderDocuments() {
@@ -655,12 +654,12 @@ filterAndRenderDocuments() {
   async refreshDocuments() {
     await this.loadDocuments();
     this.filterAndRenderDocuments();
-    this.populateDocumentSelector(); // Refresh white label selector too
+    this.populateDocumentSelector(); // Refresh report selector too
   }
 
-  // ===== WHITE LABEL FUNCTIONALITY =====
+  // ===== REPORT FUNCTIONALITY =====
 
-  // Switch between research and white label panels
+  // Switch between research and report panels
   switchPanelMode(mode) {
     this.panelMode = mode;
     
@@ -675,49 +674,49 @@ filterAndRenderDocuments() {
     } else if (mode === 'whitelabel') {
       researchForm.style.display = 'none';
       whiteLabelForm.style.display = 'block';
-      if (dropdownLabel) dropdownLabel.textContent = 'Create White Label Document';
+      if (dropdownLabel) dropdownLabel.textContent = 'Create Report';
       this.populateDocumentSelector();
     }
   }
 
-// Populate document selector for white label
-populateDocumentSelector() {
-  const selector = document.getElementById('documentSelector');
-  if (!selector) return;
-  
-  // Filter out Pulse documents (Digests and Watchlists)
-  let availableDocs = this.documents.filter(doc => {
-    const isDigest = doc.title && doc.title.toLowerCase().startsWith('digest:');
-    const isWatchlist = doc.title && doc.title.toLowerCase().startsWith('my watchlist:');
-    return !isDigest && !isWatchlist;
-  });
-  
-  // Apply current search filter if one exists
-  const searchInput = document.getElementById('documentSearch');
-  if (searchInput && searchInput.value) {
-    const searchLower = searchInput.value.toLowerCase();
-    availableDocs = availableDocs.filter(doc => {
-      const title = doc.title?.toLowerCase() || '';
-      const meta = `${doc.when} ${doc.area} ${doc.topic}`.toLowerCase();
-      return title.includes(searchLower) || meta.includes(searchLower);
+  // Populate document selector for report
+  populateDocumentSelector() {
+    const selector = document.getElementById('documentSelector');
+    if (!selector) return;
+    
+    // Filter out Pulse documents (Digests and Watchlists)
+    let availableDocs = this.documents.filter(doc => {
+      const isDigest = doc.title && doc.title.toLowerCase().startsWith('digest:');
+      const isWatchlist = doc.title && doc.title.toLowerCase().startsWith('my watchlist:');
+      return !isDigest && !isWatchlist;
     });
+    
+    // Apply current search filter if one exists
+    const searchInput = document.getElementById('documentSearch');
+    if (searchInput && searchInput.value) {
+      const searchLower = searchInput.value.toLowerCase();
+      availableDocs = availableDocs.filter(doc => {
+        const title = doc.title?.toLowerCase() || '';
+        const meta = `${doc.when} ${doc.area} ${doc.topic}`.toLowerCase();
+        return title.includes(searchLower) || meta.includes(searchLower);
+      });
+    }
+    
+    if (availableDocs.length === 0) {
+      selector.innerHTML = '<div class="empty">No documents available. Create some research first.</div>';
+      return;
+    }
+    
+    const html = availableDocs.map(doc => `
+      <div class="selectable-doc ${this.selectedDocuments.includes(doc.id) ? 'selected' : ''}" 
+           data-doc-id="${doc.id}">
+        <div class="selectable-doc-title">${doc.title}</div>
+        <div class="selectable-doc-meta">${doc.when} • ${doc.area} • ${doc.topic}</div>
+      </div>
+    `).join('');
+    
+    selector.innerHTML = html;
   }
-  
-  if (availableDocs.length === 0) {
-    selector.innerHTML = '<div class="empty">No documents available. Create some research first.</div>';
-    return;
-  }
-  
-  const html = availableDocs.map(doc => `
-    <div class="selectable-doc ${this.selectedDocuments.includes(doc.id) ? 'selected' : ''}" 
-         data-doc-id="${doc.id}">
-      <div class="selectable-doc-title">${doc.title}</div>
-      <div class="selectable-doc-meta">${doc.when} • ${doc.area} • ${doc.topic}</div>
-    </div>
-  `).join('');
-  
-  selector.innerHTML = html;
-}
 
   // Toggle document selection
   toggleDocumentSelection(docId) {
@@ -748,7 +747,7 @@ populateDocumentSelector() {
     }
   }
 
-  // Update white label character count
+  // Update report character count
   updateWhiteLabelCharCount() {
     const textarea = document.getElementById('whiteLabelJustification');
     const charCount = document.getElementById('whiteLabelCharCount');
@@ -758,82 +757,41 @@ populateDocumentSelector() {
     }
   }
 
-  // Update white label button state
+  // Update report button state
   updateWhiteLabelButton() {
     const button = document.getElementById('createWhiteLabelBtn');
-    const justification = document.getElementById('whiteLabelJustification');
+    const focus = document.getElementById('whiteLabelJustification');
     
-    if (!button || !justification) return;
+    if (!button || !focus) return;
     
     const hasDocuments = this.selectedDocuments.length > 0;
-    const hasJustification = justification.value.trim().length > 0;
+    const hasFocus = focus.value.trim().length > 0;
     
-    button.disabled = !(hasDocuments && hasJustification);
+    button.disabled = !(hasDocuments && hasFocus);
   }
 
-  // Start white label generation
-  async startWhiteLabelGeneration() {
-    const justification = document.getElementById('whiteLabelJustification');
+  // Start report generation
+  async startReportGeneration() {
+    const focusInput = document.getElementById('whiteLabelJustification');
     
-    if (!justification) return;
+    if (!focusInput) return;
     
-    // Get selected document length
-    const lengthSeg = document.querySelector('.seg-option[data-group="documentLength"].is-active');
-    const documentLength = lengthSeg?.dataset.value || '2 Pages';
+    const documentIds = this.selectedDocuments;
+    const focus = focusInput.value.trim();
     
-    // Map page length to token length for AI
-    const lengthTokenMap = {
-      '1 Page': '~700 tokens max (No charts or tables, just clear logic)',
-      '2 Pages': '~1400 tokens max (allows for charts/tables)', 
-      '3 Pages': '~2100 tokens max (allows for sophisticated reasoning)'
-    };
-    
-    const tokenLength = lengthTokenMap[documentLength] || '~4000 tokens (approximately 2 pages)';
-    
-    const whiteLabelData = {
-      document_ids: this.selectedDocuments,
-      justification: justification.value.trim(),
-      length: documentLength,
-      token_length: tokenLength
-    };
-    
-    console.log('Starting white label generation:', whiteLabelData);
-    
-    // Build prompt for white label compilation
-    const prompt = `
-Create a professional white label document by synthesizing the following documents:
-
-Document IDs: ${whiteLabelData.document_ids.join(', ')}
-
-Justification and Purpose:
-${whiteLabelData.justification}
-
-Target Length: ${tokenLength}
-
-Requirements:
-- Synthesize information from all provided documents
-- Create a cohesive narrative that addresses the justification
-- Target the specified token length (${documentLength})
-- Professional tone suitable for client-facing and official documentation based deliverables
-- Include key insights and data from source documents
-- Format as a polished, generically branded document
-
-The final output must be a single markdown document uploaded to the content object library with the title prefix "White Label: "
-    `.trim();
+    console.log('Starting report generation:', { document_ids: documentIds, focus: focus });
     
     try {
-      // Call WhiteLabel interaction with both prompt and structured data
+      // Call WhiteLabel interaction with structured data
       const response = await vertesiaAPI.call('/execute/async', {
         method: 'POST',
         body: JSON.stringify({
           type: 'conversation',
           interaction: 'WhiteLabel',
           data: {
-            task: prompt,
-            document_ids: whiteLabelData.document_ids,
-            justification: whiteLabelData.justification,
-            length: whiteLabelData.length,
-            token_length: whiteLabelData.token_length
+            task: focus,
+            document_ids: documentIds,
+            focus: focus
           },
           config: {
             environment: CONFIG.ENVIRONMENT_ID,
@@ -842,12 +800,12 @@ The final output must be a single markdown document uploaded to the content obje
         })
       });
       
-      console.log('WhiteLabel interaction started:', response);
+      console.log('Report generation started:', response);
       
       // Track as active job
       const newJob = {
         data: { 
-          capability: 'White Label',
+          capability: 'Report',
           framework: 'Document Synthesis',
           modifiers: {} 
         },
@@ -871,17 +829,17 @@ The final output must be a single markdown document uploaded to the content obje
       
       // Reset form
       this.selectedDocuments = [];
-      justification.value = '';
+      focusInput.value = '';
       document.getElementById('whiteLabelCharCount').textContent = '0';
       document.getElementById('documentCount').textContent = '0/5';
       document.getElementById('createWhiteLabelBtn').disabled = true;
       this.populateDocumentSelector();
       
-      console.log('White label generation started');
+      console.log('Report generation started');
       
     } catch (error) {
-      console.error('Failed to start white label generation:', error);
-      alert('Failed to start white label generation. Please try again.');
+      console.error('Failed to start report generation:', error);
+      alert('Failed to start report generation. Please try again.');
     }
   }
 }
@@ -984,7 +942,7 @@ class CustomSelect {
   }
 }
 
-// White Label Document Search (separate from main library search)
+// Report Document Search (separate from main library search)
 class WhiteLabelDocumentSearch {
   constructor(app) {
     this.app = app;
