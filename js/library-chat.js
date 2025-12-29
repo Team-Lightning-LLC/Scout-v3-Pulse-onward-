@@ -223,15 +223,18 @@ class LibraryChatManager {
   }
 
   async executeChat(task) {
+    // Get JWT token from central API wrapper
+    const token = await vertesiaAPI.getToken();
+    
     const response = await fetch(`${CONFIG.VERTESIA_API_BASE}/execute/async`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${CONFIG.VERTESIA_API_KEY}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         type: 'conversation',
-        interaction: 'DocumentChat',
+        interaction: 'LibraryChat',
         data: { task },
         config: {
           environment: CONFIG.ENVIRONMENT_ID,
@@ -255,7 +258,9 @@ class LibraryChatManager {
       this.streamAbortController?.abort();
     }, 120000); // 2 minute timeout
 
-    const url = `${CONFIG.VERTESIA_API_BASE}/workflows/runs/${workflowId}/${runId}/stream?since=${Date.now()}&access_token=${CONFIG.VERTESIA_API_KEY}`;
+    // Get JWT token from central API wrapper
+    const token = await vertesiaAPI.getToken();
+    const url = `${CONFIG.VERTESIA_API_BASE}/workflows/runs/${workflowId}/${runId}/stream?since=${Date.now()}&access_token=${token}`;
 
     try {
       const response = await fetch(url, { signal: this.streamAbortController.signal });
@@ -386,7 +391,7 @@ class LibraryChatManager {
     if (!text) return '';
     let html = this.escape(text);
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/^[•\-]\s+(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^[â€¢\-]\s+(.+)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
     return html.split('\n\n').map(p => p.startsWith('<ul>') ? p : `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
   }
@@ -462,7 +467,7 @@ class LibraryChatManager {
           html += `
             <span class="collection-tag">
               ${this.escape(col.name)}
-              <button class="collection-tag-remove" data-id="${id}">×</button>
+              <button class="collection-tag-remove" data-id="${id}">Ã—</button>
             </span>
           `;
         }
@@ -706,7 +711,7 @@ class LibraryChatManager {
       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
       return `
-        <div class="chat-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}" title="${this.escape(chat.title)}">
+        <div class="chat-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
           <div class="chat-history-icon">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -716,8 +721,8 @@ class LibraryChatManager {
             <div class="chat-history-name">${this.escape(chat.title)}</div>
             <div class="chat-history-meta">${dateStr}</div>
           </div>
-          <button class="chat-history-rename" title="Rename">✎</button>
-          <button class="chat-history-delete" title="Delete">×</button>
+          <button class="chat-history-rename" title="Rename">âœŽ</button>
+          <button class="chat-history-delete" title="Delete">Ã—</button>
         </div>
       `;
     }).join('');
