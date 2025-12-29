@@ -779,7 +779,10 @@ class DeepResearchApp {
     const documentIds = this.selectedDocuments;
     const focus = focusInput.value.trim();
     
-    console.log('Starting report generation:', { document_ids: documentIds, focus: focus });
+    // Build task string for agent
+    const task = `Compile a report with the following focus: "${focus}". Utilize the following documents to complete this task: "${documentIds.join(', ')}".`;
+    
+    console.log('Starting report generation:', { task, document_ids: documentIds, focus });
     
     try {
       // Call WhiteLabel interaction with structured data
@@ -789,7 +792,7 @@ class DeepResearchApp {
           type: 'conversation',
           interaction: 'WhiteLabel',
           data: {
-            task: focus,
+            task: task,
             document_ids: documentIds,
             focus: focus
           },
