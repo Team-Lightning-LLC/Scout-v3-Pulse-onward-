@@ -1,17 +1,63 @@
 // Vertesia API Wrapper Functions
+// Updated: JWT Token Authentication
 class VertesiaAPI {
   constructor() {
     this.baseURL = CONFIG.VERTESIA_API_BASE;
     this.apiKey = CONFIG.VERTESIA_API_KEY;
+    this.jwtToken = null;
+    this.tokenExpiry = null;
   }
 
-  // Generic API call wrapper
+  // ===== TOKEN MANAGEMENT =====
+
+  // Fetch JWT token from auth endpoint
+  async authenticate() {
+    try {
+      console.log('Fetching Vertesia JWT token...');
+      const response = await fetch(
+        `https://api.vertesia.io/auth/token?token=${this.apiKey}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Auth failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      this.jwtToken = data.token;
+      // Set expiry 5 minutes before actual expiry (3600s) for safety buffer
+      this.tokenExpiry = Date.now() + (3600 - 300) * 1000;
+      console.log('JWT token acquired, expires in ~55 minutes');
+      return this.jwtToken;
+    } catch (error) {
+      console.error('Failed to get JWT token:', error);
+      throw error;
+    }
+  }
+
+  // Get valid token (fetch if needed or expired)
+  async getToken() {
+    if (!this.jwtToken || Date.now() > this.tokenExpiry) {
+      await this.authenticate();
+    }
+    return this.jwtToken;
+  }
+
+  // ===== API CALLS =====
+
+  // Generic API call wrapper - NOW USES JWT
   async call(endpoint, options = {}) {
     try {
+      const token = await this.getToken();
       const url = `${this.baseURL}${endpoint}`;
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           ...options.headers
         },
@@ -22,8 +68,8 @@ class VertesiaAPI {
         throw new Error(`API call failed: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
-      return data;
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
     } catch (error) {
       console.error(`Vertesia API call failed for ${endpoint}:`, error);
       throw error;
@@ -137,7 +183,6 @@ class VertesiaAPI {
   }
 
   // Chat with document - Conversation type (agent with state)
-  // FIX: Added interactive: true and max_iterations per Vertesia API requirements
   async chatWithDocument(data) {
     console.log('Starting document chat with:', data);
     
@@ -165,7 +210,6 @@ class VertesiaAPI {
           environment: CONFIG.ENVIRONMENT_ID,
           model: CONFIG.MODEL
         },
-        // FIX: These are required for proper agent execution
         interactive: true,
         max_iterations: 100
       })
@@ -179,7 +223,6 @@ class VertesiaAPI {
   }
 
   // Extract clean answer from structured agent response
-  // Agent returns: **1. User Query:** ... **2. Resources Search:** ... **3. Agent Answer:** [content]
   extractAnswer(fullMessage) {
     if (!fullMessage) return '';
     
@@ -199,13 +242,14 @@ class VertesiaAPI {
     return fullMessage;
   }
 
-  // Stream messages from workflow with abort support
+  // Stream messages from workflow with abort support - NOW USES JWT
   async streamWorkflowMessages(workflowId, runId, abortSignal, onMessage, onComplete, onError) {
     try {
+      const token = await this.getToken();
       const since = Date.now();
-      const url = `${this.baseURL}/workflows/runs/${workflowId}/${runId}/stream?since=${since}&access_token=${this.apiKey}`;
+      const url = `${this.baseURL}/workflows/runs/${workflowId}/${runId}/stream?since=${since}&access_token=${token}`;
       
-      console.log('Opening stream:', url);
+      console.log('Opening stream with JWT token');
       
       const response = await fetch(url, {
         signal: abortSignal
