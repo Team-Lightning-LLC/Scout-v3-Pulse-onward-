@@ -773,7 +773,7 @@ class PortfolioPulseWidget {
     let articles = [];
 
     for (const block of articleBlocks) {
-      const titleMatch = block.match(/Article\s+\d+\s*[-–:]\s*(.+)/i);
+      const titleMatch = block.match(/Article\s+\d+\s*[-â€“:]\s*(.+)/i);
       const title = titleMatch ? titleMatch[1].trim() : 'Untitled Article';
 
       const contentsMatch = block.match(/Contents\s*\d*[\s\S]*?(?=(Citations|Article\s+\d+|$))/i);
@@ -788,10 +788,10 @@ class PortfolioPulseWidget {
 
       const formattedLines = [];
       for (const line of lines) {
-        if (/^[-•*]\s*\*\*.+?:/.test(line)) {
-          formattedLines.push(`<li>${this.formatMarkdown(line.replace(/^[-•*]\s*/, '').trim())}</li>`);
-        } else if (/^[-•*]\s+/.test(line)) {
-          formattedLines.push(`<li>${this.formatMarkdown(line.replace(/^[-•*]\s*/, '').trim())}</li>`);
+        if (/^[-â€¢*]\s*\*\*.+?:/.test(line)) {
+          formattedLines.push(`<li>${this.formatMarkdown(line.replace(/^[-â€¢*]\s*/, '').trim())}</li>`);
+        } else if (/^[-â€¢*]\s+/.test(line)) {
+          formattedLines.push(`<li>${this.formatMarkdown(line.replace(/^[-â€¢*]\s*/, '').trim())}</li>`);
         } else {
           formattedLines.push(`<p>${this.formatMarkdown(line)}</p>`);
         }
@@ -870,7 +870,7 @@ class PortfolioPulseWidget {
       <div class="pulse-article">
         <div class="pulse-article-header">
           <div class="pulse-article-title">${this.formatMarkdown(article.title)}</div>
-          <div class="pulse-article-toggle">▼</div>
+          <div class="pulse-article-toggle">â–¼</div>
         </div>
         <div class="pulse-article-details">
           <div class="pulse-article-body">
@@ -939,21 +939,24 @@ class PulseVertesiaAPI {
     this.apiKey = PULSE_CONFIG.VERTESIA_API_KEY;
   }
 
-  getHeaders() {
+  // Get headers with JWT token from central API wrapper
+  async getHeaders() {
+    const token = await vertesiaAPI.getToken();
     return {
-      'Authorization': `Bearer ${this.apiKey}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
   }
 
   async call(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    const headers = await this.getHeaders();
     const defaultOptions = {
       method: 'GET',
-      headers: this.getHeaders()
+      headers: headers
     };
 
-    const response = await fetch(url, { ...defaultOptions, ...options });
+    const response = await fetch(url, { ...defaultOptions, ...options, headers: { ...headers, ...options.headers } });
 
     if (!response.ok) {
       throw new Error(`API call failed: ${response.status} ${response.statusText}`);
