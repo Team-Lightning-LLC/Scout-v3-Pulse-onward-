@@ -1,760 +1,680 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MarketLens</title>
   <link rel="icon" type="image/png" href="assets/logo.png">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/collections.css">
-  <link rel="stylesheet" href="css/pulse-styles.css">
-  <link rel="stylesheet" href="css/library-chat.css">
-  <link rel="stylesheet" href="css/compact-right-panel.css">
-  
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary: #172A3A;
+      --primary-light: #1e3a4d;
+      --primary-deep: #0c1820;
+      --accent: #5e9a98;
+      --accent-light: #7eb8b6;
+      --card: #ffffff;
+      --border: #e0e5ea;
+      --text: #1f2d3d;
+      --muted: #6c7a89;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--primary);
+      min-height: 100vh;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* Background gradient */
+    .background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(165deg, #1e3a4d 0%, var(--primary) 50%, var(--primary-deep) 100%);
+      pointer-events: none;
+    }
+
+    /* Floating orbs - soft ambient presence */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(60px);
+      pointer-events: none;
+      animation: drift 25s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(94, 154, 152, 0.12) 0%, transparent 70%);
+      top: -80px;
+      right: -80px;
+      animation-delay: 0s;
+    }
+
+    .orb-2 {
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(94, 154, 152, 0.08) 0%, transparent 70%);
+      bottom: -60px;
+      left: 5%;
+      animation-delay: -8s;
+    }
+
+    .orb-3 {
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(126, 184, 182, 0.08) 0%, transparent 70%);
+      top: 45%;
+      left: -40px;
+      animation-delay: -16s;
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(20px, -15px) scale(1.03); }
+      50% { transform: translate(-15px, 20px) scale(0.97); }
+      75% { transform: translate(15px, 10px) scale(1.01); }
+    }
+
+    /* Gentle particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 50%;
+      opacity: 0;
+      animation: float linear forwards;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      70% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-60vh) translateX(10px);
+        opacity: 0;
+      }
+    }
+
+    /* Split layout */
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Left side - brand */
+    .brand-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px;
+    }
+
+    .logo-cluster {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      margin-bottom: 40px;
+    }
+
+    .logo-main {
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      z-index: 2;
+    }
+
+    .logo-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120px;
+      height: 120px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(94, 154, 152, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .logo-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 160px;
+      height: 160px;
+      border: 1px solid rgba(94, 154, 152, 0.2);
+      border-radius: 50%;
+      animation: spin 35s linear infinite;
+    }
+
+    .logo-ring::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      margin-left: -3px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .brand-text h1 {
+      font-size: 38px;
+      font-weight: 500;
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .brand-text .tagline {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
+
+    .brand-text .powered {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.25);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+
+    /* Right side - form */
+    .form-side {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      position: relative;
+    }
+
+    /* Subtle divider line */
+    .form-side::before {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 0;
+      width: 1px;
+      height: 70%;
+      background: linear-gradient(180deg, 
+        transparent 0%, 
+        rgba(94, 154, 152, 0.2) 30%,
+        rgba(94, 154, 152, 0.2) 70%,
+        transparent 100%
+      );
+    }
+
+    /* Form card - grounded, matches app */
+    .form-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-header {
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .form-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-header .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* Form */
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: var(--text);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .field input::placeholder {
+      color: #a0a8b0;
+    }
+
+    .field input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(23, 42, 58, 0.08);
+    }
+
+    /* Password wrapper */
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap input {
+      padding-right: 44px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      transition: color 0.3s ease;
+    }
+
+    .password-toggle:hover {
+      color: var(--primary);
+    }
+
+    .password-toggle svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    /* Options */
+    .options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .remember input {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .remember input:checked {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .remember input:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .remember span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .forgot {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .forgot:hover {
+      color: var(--primary);
+    }
+
+    /* Buttons */
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border: 1px solid var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-light);
+      border-color: var(--primary-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(23, 42, 58, 0.25);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 24px 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider span {
+      font-size: 12px;
+      color: #a0a8b0;
+    }
+
+    /* Create account */
+    .create {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .create a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: opacity 0.2s ease;
+    }
+
+    .create a:hover {
+      opacity: 0.8;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      .brand-side {
+        padding: 40px 40px 20px;
+        align-items: center;
+        text-align: center;
+      }
+
+      .logo-cluster {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 24px;
+      }
+
+      .logo-main {
+        width: 75px;
+        height: 75px;
+        top: 22px;
+        left: 22px;
+      }
+
+      .logo-ring {
+        width: 120px;
+        height: 120px;
+      }
+
+      .brand-text h1 {
+        font-size: 28px;
+      }
+
+      .form-side {
+        padding: 20px 40px 40px;
+      }
+
+      .form-side::before {
+        display: none;
+      }
+    }
+  </style>
 </head>
 <body>
-  <!-- Header -->
-  <div class="header">
-    <div class="logo-section">
-      <a href="app.html" class="logo-link" title="Reload MarketLens">
-        <img src="assets/logo.png" alt="MarketLens" class="logo">
-        <div class="brand-info">
-          <h1>MarketLens</h1>
-          <div class="subtitle">Powered By Vertesia</div>
-        </div>
-      </a>
-    </div>
-    
-    <!-- Utility Bar -->
-    <div class="utility-bar">
-      <button class="utility-btn" id="profileBtn" title="Profile">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        <span>Profile</span>
-      </button>
-      <button class="utility-btn" id="supportBtn" title="Support">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-          <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        <span>Support</span>
-      </button>
-      <button class="utility-btn" id="logoffBtn" title="Log off">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-        <span>Log off</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Secondary Nav -->
-  <nav class="secondary-nav">
-    <div class="secondary-links">
-      <div class="secondary-link"></div>
-      <div class="secondary-link"></div>
-      <div class="secondary-link"></div>
-      <div class="secondary-link"></div>
-    </div>
-  </nav>
+  <!-- Background -->
+  <div class="background"></div>
   
-  <!-- Hero -->
-  <header class="research-banner">
-    <h2></h2>
-  </header>
+  <!-- Ambient orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
 
-  <!-- Shell -->
-  <section class="shell">
-    <!-- Left: Documents / Portfolio Pulse / Library Chat -->
-    <aside class="left">
-      <div class="panel-head">
-        <span class="panel-header">Library</span>
-        <div class="view-toggle">
-          <button class="view-toggle-btn active" id="viewLibrary" data-tooltip="View your research document library">Research</button>
-          <button class="view-toggle-btn" id="viewPulse" data-tooltip="View personalized digest articles based on your interests">Pulse</button>
-          <button class="view-toggle-btn" id="viewChat" data-tooltip="Chat with your entire research library">Chat</button>
-        </div>
+  <!-- Gentle particles -->
+  <div class="particles" id="particles"></div>
+
+  <div class="container">
+    <!-- Brand side -->
+    <div class="brand-side">
+      <div class="logo-cluster">
+        <div class="logo-ring"></div>
+        <div class="logo-glow"></div>
+        <img src="assets/logo.png" alt="MarketLens" class="logo-main">
       </div>
-      
-      <div class="left-body">
-        <!-- Library View (Default) -->
-        <div id="libraryContainer">
-          <div class="searchBox" style="padding:0 0 8px 0">
-            <input id="docSearch" placeholder="Search documents…"/>
-          </div>
-          
-          <div class="collections-section">
-            <div class="section-header">
-              <span class="section-title">Collections</span>
-            </div>
-            <div id="collectionsList" class="collections-list"></div>
-          </div>
-          
-          <div class="documents-section">
-            <div class="docs-header" id="docsHeader">All Documents</div>
-            <div class="docs-scroll" id="docsPane">
-              <div class="empty">Loading your research library...</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Portfolio Pulse View (Hidden by default) -->
-        <div id="pulseContainer">
-          <div class="pulse-header">
-            <div class="pulse-title-row">
-              <div class="pulse-title-section">
-                <span class="pulse-title">Portfolio Pulse:</span>
-                <div class="pulse-date-nav">
-                  <button class="pulse-nav-btn pulse-nav-prev" id="pulseNavPrev" disabled data-tooltip="View older digest">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="15 18 9 12 15 6"/>
-                    </svg>
-                  </button>
-                  <span class="pulse-date" id="pulseDateDisplay">--</span>
-                  <button class="pulse-nav-btn pulse-nav-next" id="pulseNavNext" disabled data-tooltip="View newer digest">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div class="watchlist-controls">
-                <div class="watchlist-display" id="watchlistDisplay" style="display: none;">
-                  <span class="watchlist-name" id="watchlistName" data-tooltip="">My Watchlist</span>
-                  <button class="watchlist-refresh-btn" id="watchlistRefreshBtn" data-tooltip="Regenerate digest with current watchlist">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M23 4v6h-6M1 20v-6h6"/>
-                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                    </svg>
-                  </button>
-                  <button class="watchlist-change-btn" id="watchlistChangeBtn" data-tooltip="Upload a different watchlist">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/>
-                      <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                  </button>
-                </div>
-                <button class="pulse-upload-btn" id="pulseUploadBtn">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  Upload Watchlist
-                </button>
-                <input type="file" id="watchlistFileInput" style="display: none;" />
-              </div>
-            </div>
-            <div class="pulse-section-header">Daily Articles</div>
-          </div>
-
-          <div class="pulse-articles-container" id="pulseArticlesContainer">
-            <div class="pulse-loading-overlay" id="pulseLoadingOverlay" style="display: none;">
-              <div class="pulse-loading-content">
-                <div class="pulse-spinner"></div>
-                <p class="pulse-loading-text">Loading Digests...</p>
-                <p class="pulse-loading-subtext">The newest daily digest can take as long as 5 minutes to appear.</p>
-              </div>
-            </div>
-            <div class="pulse-empty-state">
-              <p>Upload a watchlist to generate personalized digest articles.</p>
-            </div>
-          </div>
-
-          <div class="pulse-footer">
-            <div class="pulse-status-indicator">
-              <span class="pulse-status-dot" id="pulseStatusDot"></span>
-              <span class="pulse-status-text" id="pulseStatusText">Active</span>
-            </div>
-            <span class="pulse-last-update" id="pulseLastUpdate">Last Update: --</span>
-          </div>
-        </div>
-
-        <!-- Library Chat View -->
-        <div id="chatContainer" class="chat-layout">
-          <div class="chat-sidebar">
-            <div class="chat-sidebar-header">
-              <button class="new-chat-btn" id="newChatBtn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                New Chat
-              </button>
-              <button class="save-chat-btn" id="saveChatBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                  <polyline points="17 21 17 13 7 13 7 21"/>
-                  <polyline points="7 3 7 8 15 8"/>
-                </svg>
-                Save Current Chat
-              </button>
-            </div>
-            
-            <div class="chat-history-section" id="starredChatsSection" style="display: none;">
-              <div class="chat-history-title">Starred</div>
-            </div>
-            
-            <div class="chat-history-section" id="recentChatsSection">
-              <div class="chat-history-title">Recent</div>
-            </div>
-            
-            <div class="chat-history-list" id="chatHistoryList"></div>
-          </div>
-          
-          <div class="chat-main">
-            <div class="chat-messages-area" id="chatMessagesArea">
-              <div class="chat-welcome">
-                <div class="chat-welcome-icon">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
-                </div>
-                <h3>Chat with Your Research Library</h3>
-                <p>Ask questions about your documents. You can search across all documents or select specific collections to focus your queries.</p>
-              </div>
-            </div>
-            
-            <div class="chat-input-area">
-              <div class="chat-collection-bar" id="chatCollectionBar">
-                <span class="collection-indicator-label">Searching:</span>
-                <span class="collection-tag all-docs">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                  </svg>
-                  All Documents
-                </span>
-                <button class="collection-selector-btn" id="collectionSelectorBtn" title="Select collections">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                </button>
-              </div>
-              
-              <div class="collection-selector-popup" id="collectionSelectorPopup">
-                <div class="collection-selector-header">
-                  <span class="collection-selector-title">Include Collections</span>
-                  <button class="collection-selector-close" id="closeCollectionPopup">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                </div>
-                <div class="collection-selector-list" id="collectionSelectorList"></div>
-              </div>
-              
-              <div class="chat-input-row">
-                <div class="chat-input-wrapper">
-                  <textarea id="libraryChatInput" class="chat-input" placeholder="Ask a question about your documents..." rows="1"></textarea>
-                  <button class="chat-send-button" id="libraryChatSend" title="Send message">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </aside>
-
-    <!-- Right: Generation -->
-    <main class="right">
-      <div class="panel-head">
-        <span class="panel-header">Create</span>
-        <div class="view-toggle">
-          <button class="view-toggle-btn active" id="viewResearch" data-tooltip="Generate new research documents with custom frameworks">Research</button>
-          <button class="view-toggle-btn" id="viewWhiteLabel" data-tooltip="Combine multiple research documents into a comprehensive synthesis report">Report</button>
-        </div>
-        <span id="activeJobsBadge" class="active-badge" style="display: none;">Active (0)</span>
-      </div>
-      
-      <!-- FIXED: Research Form now properly wrapped -->
-      <div class="console" id="researchForm">
-        
-        <!-- Research Capability -->
-        <div class="section">
-          <h3 data-tooltip="Choose the type of analysis framework for your research">Research Topic</h3>
-          <div class="field-group">
-            <div class="custom-select" id="capabilitySelect" data-name="capability">
-              <div class="custom-select-trigger">
-                <span>Select Research Type...</span>
-                <svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
-              </div>
-              <div class="custom-select-options">
-                <div class="custom-select-option placeholder" data-value="">Select Research Type...</div>
-                <div class="custom-select-option" data-value="Traditional Analysis" data-tooltip="Standard financial analysis frameworks like DCF, SWOT, and Porter's Five Forces">Traditional Analysis</div>
-                <div class="custom-select-option" data-value="Ecosystem Focused" data-tooltip="Map supplier, partner, and competitor networks to understand business dependencies">Ecosystem</div>
-                <div class="custom-select-option" data-value="Narrative Centric" data-tooltip="Analyze market sentiment, competitive positioning, and management quality">Narrative Focused</div>
-                <div class="custom-select-option" data-value="Comparative" data-tooltip="Compare multiple assets over time or across sectors to identify value migration">Comparative</div>
-                <div class="custom-select-option" data-value="Scenario Modeling" data-tooltip="Model downside risks, correlations, and strategic market entry scenarios">Scenario Modeling</div>
-                <div class="custom-select-option" data-value="Company Insights" data-tooltip="Map talent landscapes, partnerships, and emerging industry trends">Intelligence Research</div>
-                <div class="custom-select-option" data-value="Custom Research" data-tooltip="Design your own research question and analytical approach">Custom Input</div>
-              </div>
-            </div>
-          </div>
-          <div class="field-group">
-            <div class="custom-select disabled" id="frameworkSelect" data-name="framework">
-              <div class="custom-select-trigger disabled">
-                <span>Choose Focus...</span>
-                <svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
-              </div>
-              <div class="custom-select-options">
-                <div class="custom-select-option placeholder" data-value="">Choose Focus...</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Context -->
-        <div class="section">
-          <h3>Additional Context</h3>
-          <textarea id="contextInput" placeholder="Select a Focus above to begin..." rows="3" maxlength="1000"></textarea>
-          <div style="font-size:11px;color:#6c7a89;text-align:right;margin-top:4px"><span id="charCount">0</span> / 1000</div>
-        </div>
-        
-        <!-- Research Modifiers -->
-        <div class="section ctx-compact">
-          <h3>Research Modifiers</h3>
-          <div class="ctx-grid">
-            <div class="ctx-block">
-              <div class="ctx-label">SCOPE</div>
-              <div class="seg" role="radiogroup" aria-label="Scope">
-                <button type="button" class="seg-option is-active" data-group="scope" data-value="Assets">Asset</button>
-                <button type="button" class="seg-option" data-group="scope" data-value="Sector">Sector</button>
-                <button type="button" class="seg-option" data-group="scope" data-value="Market">Market</button>
-              </div>
-            </div>
-            <div class="ctx-block">
-              <div class="ctx-label">OVERVIEW DETAILS</div>
-              <div class="seg" role="radiogroup" aria-label="Detail">
-                <button type="button" class="seg-option is-active" data-group="Overview Details" data-value="High-Level">High-Level</button>
-                <button type="button" class="seg-option" data-group="Overview Details" data-value="In Depth">In Depth</button>
-                <button type="button" class="seg-option" data-group="Overview Details" data-value="Comprehensive">Comprehensive</button>
-              </div>
-            </div>
-            <div class="ctx-block">
-              <div class="ctx-label">ANALYTICAL RIGOR</div>
-              <div class="seg" role="radiogroup" aria-label="Rigor">
-                <button type="button" class="seg-option is-active" data-group="Analytical Rigor" data-value="Key Figures">Key Figures</button>
-                <button type="button" class="seg-option" data-group="Analytical Rigor" data-value="Analytical">Analytical</button>
-                <button type="button" class="seg-option" data-group="Analytical Rigor" data-value="Exhaustive Research">Exhaustive</button>
-              </div>
-            </div>
-            <div class="ctx-block">
-              <div class="ctx-label">PERSPECTIVE</div>
-              <div class="seg" role="radiogroup" aria-label="Perspective">
-                <button type="button" class="seg-option is-active" data-group="perspective" data-value="Investment">Investment</button>
-                <button type="button" class="seg-option" data-group="perspective" data-value="Educational">Educational</button>
-                <button type="button" class="seg-option" data-group="perspective" data-value="Technical">Technical</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="generate-row">
-          <button class="btn primary" id="createBtn" disabled>Generate Research</button>
-        </div>
-        
-      </div>
-      <!-- END Research Form -->
-      
-      <!-- Report Form (Hidden by default) -->
-      <div class="console" id="whiteLabelForm" style="display: none;">
-        <div class="section">
-          <h3>Select Documents <span id="documentCount" style="color:var(--muted);font-weight:normal">(0/5)</span></h3>
-          <div class="searchBox" style="padding:0 0 8px 0">
-            <input id="documentSearch" placeholder="Search documents to include…"/>
-          </div>
-          <div id="documentSelector" class="document-selector"></div>
-        </div>
-        
-        <div class="section">
-          <h3>Focus</h3>
-          <textarea id="whiteLabelJustification" placeholder="What should this report emphasize?" rows="2" maxlength="2000"></textarea>
-          <div style="font-size:11px;color:#6c7a89;text-align:right;margin-top:4px"><span id="whiteLabelCharCount">0</span> / 2000</div>
-        </div>
-        
-        <div class="generate-row">
-          <button class="btn primary" id="createWhiteLabelBtn" disabled>Generate Report</button>
-        </div>
-      </div>
-    </main>
-  </section>
-
-  <!-- Generation Progress Toast -->
-  <div id="generationToast" class="toast-notification" style="display: none;">
-    <div class="toast-header">
-      <div class="toast-icon">
-        <div class="toast-spinner"></div>
-      </div>
-      <div class="toast-title-section">
-        <div class="toast-title">Research in Progress</div>
-        <div class="toast-subtitle"><span id="jobCount">0</span> active jobs</div>
-      </div>
-      <button class="toast-minimize" id="toastMinimize">-</button>
-      <button class="toast-close" id="toastClose">×</button>
-    </div>
-    <div class="toast-body" id="toastBody">
-      <div id="jobsList" class="toast-jobs-list"></div>
-    </div>
-  </div>
-
-  <!-- Document Viewer Dialog -->
-  <dialog id="viewer" aria-label="Document viewer">
-    <div class="viewer-head">
-      <div class="viewer-title" id="viewerTitle">Document</div>
-      <div class="viewer-actions">
-        <button type="button" class="viewer-btn" id="downloadPDF">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7,10 12,15 17,10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-        </button>
-        <button type="button" class="viewer-btn" id="chatToggle">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </button>
-        <button type="button" class="viewer-close" id="closeViewer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+      <div class="brand-text">
+        <h1>MarketLens</h1>
+        <p class="tagline">Financial Research</p>
+        <p class="powered">Powered by Vertesia</p>
       </div>
     </div>
-    
-    <div class="viewer-container">
-      <div id="viewerFrame" class="viewer-content"></div>
-      
-      <div id="chatPanel" class="chat-panel">
-        <div class="chat-document-title" id="chatDocTitle">Document Name</div>
-        <div class="chat-panel-header">
-          <div class="panel-tabs">
-            <button class="panel-tab active" data-tab="chat">Chat with Document</button>
-            <button class="panel-tab" data-tab="followup">Follow Up Research</button>
-          </div>
-        </div>
-        
-        <div class="tab-content" id="chatTab">
-          <div class="chat-messages" id="chatMessages"></div>
-          <div class="chat-input-container">
-            <textarea id="chatInput" rows="2" placeholder="Ask a question about this document..."></textarea>
-            <button id="chatSend" class="chat-send-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-        
-        <div class="tab-content hidden" id="followupTab">
-          <div class="followup-form">
-            <div class="followup-section">
-              <label class="followup-label">What would you like to explore further?</label>
-              <textarea id="followupContext" rows="4" placeholder="Reference specific quotes, sections, themes, or concepts..." maxlength="1500"></textarea>
-              <div class="char-count"><span id="followupCharCount">0</span> / 1500</div>
-            </div>
-            
-            <div class="followup-section">
-              <div class="followup-modifiers" id="followupModifiers">
-                <div class="modifier-group">
-                  <div class="modifier-label">SCOPE</div>
-                  <div class="seg" role="radiogroup" aria-label="Scope">
-                    <button type="button" class="seg-option is-active" data-group="scope" data-value="Assets">Asset</button>
-                    <button type="button" class="seg-option" data-group="scope" data-value="Sector">Sector</button>
-                    <button type="button" class="seg-option" data-group="scope" data-value="Market">Market</button>
-                  </div>
-                </div>
-                <div class="modifier-group">
-                  <div class="modifier-label">OVERVIEW DETAILS</div>
-                  <div class="seg" role="radiogroup" aria-label="Detail">
-                    <button type="button" class="seg-option is-active" data-group="Overview Details" data-value="High-Level">High-Level</button>
-                    <button type="button" class="seg-option" data-group="Overview Details" data-value="In Depth">In Depth</button>
-                    <button type="button" class="seg-option" data-group="Overview Details" data-value="Comprehensive">Comprehensive</button>
-                  </div>
-                </div>
-                <div class="modifier-group">
-                  <div class="modifier-label">ANALYTICAL RIGOR</div>
-                  <div class="seg" role="radiogroup" aria-label="Rigor">
-                    <button type="button" class="seg-option is-active" data-group="Analytical Rigor" data-value="Key Figures">Key Figures</button>
-                    <button type="button" class="seg-option" data-group="Analytical Rigor" data-value="Analytical">Analytical</button>
-                    <button type="button" class="seg-option" data-group="Analytical Rigor" data-value="Exhaustive Research">Exhaustive</button>
-                  </div>
-                </div>
-                <div class="modifier-group">
-                  <div class="modifier-label">PERSPECTIVE</div>
-                  <div class="seg" role="radiogroup" aria-label="Perspective">
-                    <button type="button" class="seg-option is-active" data-group="perspective" data-value="Investment">Investment</button>
-                    <button type="button" class="seg-option" data-group="perspective" data-value="Educational">Educational</button>
-                    <button type="button" class="seg-option" data-group="perspective" data-value="Technical">Technical</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="followup-actions">
-              <button class="btn primary" id="generateFollowup" disabled>Generate Follow Up</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </dialog>
 
-  <!-- Application Scripts -->
-  <script src="js/config.js"></script>
-  <script src="js/vertesia-api.js"></script>
-  <script src="js/markdown-viewer.js"></script>
-  <script src="js/research-engine.js"></script>
-  <script src="js/collections.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/tooltip.js"></script>
-
-  <!-- Portfolio Pulse Scripts -->
-  <script src="js/pulse-config.js"></script>
-  <script src="js/pulse-widget.js"></script>
-  
-  <!-- Library Chat Script -->
-  <script src="js/library-chat.js"></script>
-  
-  <!-- Pulse Integration with Chat support -->
-  <script src="js/pulse-integration.js"></script>
-
-  <!-- ===== UTILITY MODALS ===== -->
-  
-  <!-- Profile Modal -->
-  <div class="utility-modal" id="profileModal">
-    <div class="utility-modal-backdrop"></div>
-    <div class="utility-modal-card">
-      <button class="utility-modal-close">&times;</button>
-      <div class="utility-modal-header">
-        <h2>Profile Settings</h2>
-        <p>Manage your account and preferences</p>
-      </div>
-      <div class="profile-content">
-        <div class="profile-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
+    <!-- Form side -->
+    <div class="form-side">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>Welcome back</h2>
         </div>
-        <div class="profile-info">
-          <div class="profile-field">
-            <label>Display Name</label>
-            <input type="text" value="Dev User" placeholder="Your name">
-          </div>
-          <div class="profile-field">
+
+        <form class="form" onsubmit="handleLogin(event)">
+          <div class="field">
             <label>Email</label>
-            <input type="email" value="dev@marketlens.io" placeholder="Your email">
+            <input type="email" placeholder="Enter your email" autocomplete="email" required>
           </div>
-          <div class="profile-field">
-            <label>Organization</label>
-            <input type="text" value="MarketLens Demo" placeholder="Company name">
-          </div>
-        </div>
-        <div class="profile-section">
-          <h3>Preferences</h3>
-          <div class="profile-toggle">
-            <span>Email notifications</span>
-            <label class="toggle-switch">
-              <input type="checkbox" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="profile-toggle">
-            <span>Research auto-save</span>
-            <label class="toggle-switch">
-              <input type="checkbox" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-        <div class="profile-actions">
-          <button class="btn secondary" onclick="closeModal('profileModal')">Cancel</button>
-          <button class="btn primary">Save Changes</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Support Modal -->
-  <div class="utility-modal" id="supportModal">
-    <div class="utility-modal-backdrop"></div>
-    <div class="utility-modal-card support-card">
-      <button class="utility-modal-close">&times;</button>
-      <div class="utility-modal-header">
-        <h2>How can we help?</h2>
-        <p>Choose an option below or contact our support team</p>
-      </div>
-      <div class="help-options">
-        <a href="forgot-password.html" class="help-option">
-          <div class="help-option-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
+          <div class="field">
+            <label>Password</label>
+            <div class="password-wrap">
+              <input type="password" id="pass" placeholder="Enter your password" autocomplete="current-password" required>
+              <button type="button" class="password-toggle" onclick="togglePass()">
+                <svg id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
           </div>
-          <div class="help-option-content">
-            <h3>Reset password</h3>
-            <p>Forgot your password? We'll help you reset it</p>
-          </div>
-          <div class="help-option-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </a>
-        <a href="#" class="help-option">
-          <div class="help-option-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-          </div>
-          <div class="help-option-content">
-            <h3>Getting started</h3>
-            <p>New to MarketLens? Learn the basics</p>
-          </div>
-          <div class="help-option-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </a>
-        <a href="#" class="help-option">
-          <div class="help-option-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
-          </div>
-          <div class="help-option-content">
-            <h3>Technical issues</h3>
-            <p>Something not working? Let us know</p>
-          </div>
-          <div class="help-option-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </a>
-        <a href="#" class="help-option">
-          <div class="help-option-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          <div class="help-option-content">
-            <h3>Account & billing</h3>
-            <p>Manage your subscription and settings</p>
-          </div>
-          <div class="help-option-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        </a>
-      </div>
-      <div class="help-divider"><span>or</span></div>
-      <div class="contact-info">
-        <p>Need more help? Contact our support team</p>
-        <a href="mailto:support@marketlens.io">support@marketlens.io</a>
-      </div>
-    </div>
-  </div>
 
-  <!-- Log Off Modal -->
-  <div class="utility-modal" id="logoffModal">
-    <div class="utility-modal-backdrop"></div>
-    <div class="utility-modal-card logoff-card">
-      <button class="utility-modal-close">&times;</button>
-      <div class="logoff-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-      </div>
-      <div class="utility-modal-header">
-        <h2>Sign Out</h2>
-        <p>Are you sure you want to sign out of MarketLens?</p>
-      </div>
-      <div class="logoff-actions">
-        <button class="btn secondary" onclick="closeModal('logoffModal')">Cancel</button>
-        <button class="btn danger" onclick="window.location.href='index.html'">Sign Out</button>
+          <div class="options">
+            <label class="remember">
+              <input type="checkbox">
+              <span>Remember me</span>
+            </label>
+            <a href="forgot-password.html" class="forgot">Forgot password?</a>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">Sign In</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='help.html'">Support</button>
+          </div>
+        </form>
+
+        <div class="divider"><span>or</span></div>
+
+        <p class="create">
+          New here? <a href="signup.html">Create an account</a>
+        </p>
       </div>
     </div>
   </div>
 
   <script>
-    // Utility Modal Functions
-    function openModal(modalId) {
-      document.getElementById(modalId).classList.add('active');
-      document.body.style.overflow = 'hidden';
+    // Gentle particles
+    const particlesContainer = document.getElementById('particles');
+    
+    function createParticle() {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      
+      const size = 2 + Math.random() * 3;
+      particle.style.width = size + 'px';
+      particle.style.height = size + 'px';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.bottom = -(Math.random() * 10) + '%';
+      
+      const duration = 25 + Math.random() * 20;
+      particle.style.animationDuration = duration + 's';
+      
+      particlesContainer.appendChild(particle);
+      particle.addEventListener('animationend', () => particle.remove());
     }
     
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.remove('active');
-      document.body.style.overflow = '';
+    // Initial particles
+    for (let i = 0; i < 10; i++) {
+      setTimeout(createParticle, i * 600);
     }
     
-    // Button click handlers
-    document.getElementById('profileBtn').addEventListener('click', () => openModal('profileModal'));
-    document.getElementById('supportBtn').addEventListener('click', () => openModal('supportModal'));
-    document.getElementById('logoffBtn').addEventListener('click', () => openModal('logoffModal'));
-    
-    // Close on backdrop click
-    document.querySelectorAll('.utility-modal-backdrop').forEach(backdrop => {
-      backdrop.addEventListener('click', () => {
-        backdrop.closest('.utility-modal').classList.remove('active');
-        document.body.style.overflow = '';
-      });
-    });
-    
-    // Close on X button
-    document.querySelectorAll('.utility-modal-close').forEach(btn => {
-      btn.addEventListener('click', () => {
-        btn.closest('.utility-modal').classList.remove('active');
-        document.body.style.overflow = '';
-      });
-    });
-    
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        document.querySelectorAll('.utility-modal.active').forEach(modal => {
-          modal.classList.remove('active');
-        });
-        document.body.style.overflow = '';
-      }
-    });
-  </script>
+    // Ongoing particles
+    setInterval(createParticle, 2500);
 
-  <!-- Bottom left utilities -->
-  <button id="downloadHistory" class="history-download-btn" title="Download research history">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-    </svg>
-    Screen History
-  </button>
-  
-  <!-- Bottom right build -->
-  <div class="version-badge">Scout Build v3.4.1 "Report" - Last Updated: 12.29.2025</div>
+    // Password toggle
+    function togglePass() {
+      const input = document.getElementById('pass');
+      const icon = document.getElementById('eye');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = `
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+          <path d="M1 1l22 22"/>
+          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+        `;
+      } else {
+        input.type = 'password';
+        icon.innerHTML = `
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        `;
+      }
+    }
+
+    // Login
+    function handleLogin(e) {
+      e.preventDefault();
+      window.location.href = 'app.html';
+    }
+  </script>
 </body>
 </html>
