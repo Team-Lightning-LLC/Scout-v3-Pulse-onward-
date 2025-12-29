@@ -276,7 +276,7 @@
         <span class="panel-header">Create</span>
         <div class="view-toggle">
           <button class="view-toggle-btn active" id="viewResearch" data-tooltip="Generate new research documents with custom frameworks">Research</button>
-          <button class="view-toggle-btn" id="viewWhiteLabel" data-tooltip="Synthesize multiple documents into a single white-label report">Report</button>
+          <button class="view-toggle-btn" id="viewWhiteLabel" data-tooltip="Combine multiple research documents into a comprehensive synthesis report">Report</button>
         </div>
         <span id="activeJobsBadge" class="active-badge" style="display: none;">Active (0)</span>
       </div>
@@ -371,7 +371,7 @@
       </div>
       <!-- END Research Form -->
       
-      <!-- White Label Form (Hidden by default) -->
+      <!-- Report Form (Hidden by default) -->
       <div class="console" id="whiteLabelForm" style="display: none;">
         <div class="section">
           <h3>Select Documents <span id="documentCount" style="color:var(--muted);font-weight:normal">(0/5)</span></h3>
@@ -382,18 +382,9 @@
         </div>
         
         <div class="section">
-          <h3>Justification</h3>
-          <textarea id="whiteLabelJustification" placeholder="Describe the purpose and focus of this white label document..." rows="2" maxlength="2000"></textarea>
+          <h3>Focus</h3>
+          <textarea id="whiteLabelJustification" placeholder="What should this report emphasize?" rows="2" maxlength="2000"></textarea>
           <div style="font-size:11px;color:#6c7a89;text-align:right;margin-top:4px"><span id="whiteLabelCharCount">0</span> / 2000</div>
-        </div>
-        
-        <div class="section ctx-compact">
-          <h3>Document Length</h3>
-          <div class="seg" role="radiogroup" aria-label="Length">
-            <button type="button" class="seg-option" data-group="documentLength" data-value="1 Page">1 Page</button>
-            <button type="button" class="seg-option is-active" data-group="documentLength" data-value="2 Pages">2 Pages</button>
-            <button type="button" class="seg-option" data-group="documentLength" data-value="3 Pages">3 Pages</button>
-          </div>
         </div>
         
         <div class="generate-row">
@@ -764,6 +755,6 @@
   </button>
   
   <!-- Bottom right build -->
-  <div class="version-badge">Scout Build v3.4.0 "Utility" - Last Updated: 12.22.2025</div>
+  <div class="version-badge">Scout Build v3.4.1 "Report" - Last Updated: 12.29.2025</div>
 </body>
 </html>
